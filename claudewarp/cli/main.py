@@ -10,18 +10,7 @@ import sys
 
 import colorlog
 
-
-class LevelAlignFilter:
-    """把 levelname 变成 '[DEBUG]    ' 这种固定总宽 13 的左对齐字符串"""
-
-    WIDTH = 11
-
-    def filter(self, record):
-        # 原始 level 名
-        name = record.levelname
-        # 构造固定宽度的前缀
-        record.levelname_padded = f"[{name}]{' ' * (self.WIDTH - len(name) - 2)}"
-        return True
+from claudewarp.core.utils import LevelAlignFilter
 
 
 # 设置彩色日志

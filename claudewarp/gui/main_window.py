@@ -12,24 +12,32 @@ from typing import Dict, Optional
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QFont
 from PySide6.QtWidgets import (
-    QComboBox,
-    QGroupBox,
     QHBoxLayout,
     QHeaderView,
-    QLabel,
-    QLineEdit,
     QMainWindow,
     QMessageBox,
     QProgressBar,
-    QPushButton,
     QSplitter,
     QStatusBar,
-    QTableWidget,
     QTableWidgetItem,
-    QTextEdit,
-    QToolBar,
     QVBoxLayout,
     QWidget,
+)
+
+# PyQt-Fluent-Widgets imports
+from qfluentwidgets import (
+    BodyLabel,
+    CaptionLabel,
+    CardWidget,
+    ComboBox,
+    FluentIcon,
+    LineEdit,
+    PrimaryPushButton,
+    PushButton,
+    StrongBodyLabel,
+    TableWidget,
+    TextEdit,
+    TitleLabel,
 )
 
 from claudewarp.core.manager import ProxyManager
@@ -74,7 +82,6 @@ class MainWindow(QMainWindow):
         self.logger.debug("设置用户界面")
         self.setup_ui()
         self.setup_menu_bar()
-        self.setup_tool_bar()
         self.setup_status_bar()
         self.setup_connections()
 
@@ -156,43 +163,58 @@ class MainWindow(QMainWindow):
 
         return widget
 
-    def create_search_group(self) -> QGroupBox:
+    def create_search_group(self) -> CardWidget:
         """创建搜索组"""
-        group = QGroupBox("搜索和筛选")
-        layout = QHBoxLayout(group)
+        group = CardWidget()
+        layout = QVBoxLayout(group)
+
+        # 添加标题
+        title = TitleLabel("搜索和筛选")
+        layout.addWidget(title)
+
+        # 创建内容布局
+        content_layout = QHBoxLayout()
 
         # 搜索框
-        self.search_edit = QLineEdit()
+        self.search_edit = LineEdit()
         self.search_edit.setPlaceholderText("搜索代理名称、描述或标签...")
-        layout.addWidget(QLabel("搜索:"))
-        layout.addWidget(self.search_edit)
+        self.search_edit.setClearButtonEnabled(True)
+        content_layout.addWidget(BodyLabel("搜索:"))
+        content_layout.addWidget(self.search_edit)
 
         # 状态筛选
-        self.status_filter = QComboBox()
+        self.status_filter = ComboBox()
         self.status_filter.addItems(["全部", "启用", "禁用"])
-        layout.addWidget(QLabel("状态:"))
-        layout.addWidget(self.status_filter)
+        content_layout.addWidget(BodyLabel("状态:"))
+        content_layout.addWidget(self.status_filter)
 
         # 清除按钮
-        self.clear_search_btn = QPushButton("清除")
-        layout.addWidget(self.clear_search_btn)
+        self.clear_search_btn = PushButton("清除")
+        self.clear_search_btn.setIcon(FluentIcon.DELETE)
+        content_layout.addWidget(self.clear_search_btn)
+
+        layout.addLayout(content_layout)
 
         return group
 
-    def create_proxy_list_group(self) -> QGroupBox:
+    def create_proxy_list_group(self) -> CardWidget:
         """创建代理列表组"""
-        group = QGroupBox("代理服务器列表")
+        group = CardWidget()
         layout = QVBoxLayout(group)
 
+        # 添加标题
+        title = TitleLabel("代理服务器列表")
+        layout.addWidget(title)
+
         # 创建表格
-        self.proxy_table = QTableWidget()
+        self.proxy_table = TableWidget()
         self.proxy_table.setColumnCount(5)
         self.proxy_table.setHorizontalHeaderLabels(["状态", "名称", "URL", "描述", "更新时间"])
 
         # 设置表格属性
         self.proxy_table.setAlternatingRowColors(True)
-        self.proxy_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.proxy_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.proxy_table.setSelectionBehavior(TableWidget.SelectRows)
+        self.proxy_table.setSelectionMode(TableWidget.SingleSelection)
         self.proxy_table.setSortingEnabled(True)
 
         # 设置列宽
@@ -207,35 +229,50 @@ class MainWindow(QMainWindow):
 
         return group
 
-    def create_action_group(self) -> QGroupBox:
+    def create_action_group(self) -> CardWidget:
         """创建操作按钮组"""
-        group = QGroupBox("操作")
-        layout = QHBoxLayout(group)
+        group = CardWidget()
+        layout = QVBoxLayout(group)
+
+        # 添加标题
+        title = TitleLabel("操作")
+        layout.addWidget(title)
+
+        # 创建按钮布局
+        button_layout = QHBoxLayout()
 
         # 创建按钮
-        self.add_btn = QPushButton("添加代理")
-        self.edit_btn = QPushButton("编辑代理")
-        self.remove_btn = QPushButton("删除代理")
-        self.switch_btn = QPushButton("切换到此代理")
-        self.toggle_btn = QPushButton("启用/禁用")
-        self.refresh_btn = QPushButton("刷新")
+        self.add_btn = PrimaryPushButton("添加")
+        self.add_btn.setIcon(FluentIcon.ADD)
+        self.edit_btn = PushButton("编辑")
+        self.edit_btn.setIcon(FluentIcon.EDIT)
+        self.remove_btn = PushButton("删除")
+        self.remove_btn.setIcon(FluentIcon.DELETE)
+        self.switch_btn = PrimaryPushButton("切换")
+        self.switch_btn.setIcon(FluentIcon.SYNC)
+        self.toggle_btn = PushButton("启用/禁用")
+        self.toggle_btn.setIcon(FluentIcon.POWER_BUTTON)
+        self.refresh_btn = PushButton("刷新")
+        self.refresh_btn.setIcon(FluentIcon.SYNC)
 
-        # 设置按钮图标（如果有的话）
-        self.add_btn.setToolTip("添加新的代理服务器")
-        self.edit_btn.setToolTip("编辑选中的代理服务器")
-        self.remove_btn.setToolTip("删除选中的代理服务器")
-        self.switch_btn.setToolTip("切换到选中的代理服务器")
-        self.toggle_btn.setToolTip("切换选中代理的启用状态")
+        # 设置按钮提示文本
+        self.add_btn.setToolTip("添加新的代理")
+        self.edit_btn.setToolTip("编辑选中的代理")
+        self.remove_btn.setToolTip("删除选中的代理")
+        self.switch_btn.setToolTip("切换到选中的代理")
+        self.toggle_btn.setToolTip("切换启用状态")
         self.refresh_btn.setToolTip("刷新代理列表")
 
         # 添加按钮到布局
-        layout.addWidget(self.add_btn)
-        layout.addWidget(self.edit_btn)
-        layout.addWidget(self.remove_btn)
-        layout.addWidget(self.switch_btn)
-        layout.addWidget(self.toggle_btn)
-        layout.addStretch()
-        layout.addWidget(self.refresh_btn)
+        button_layout.addWidget(self.add_btn)
+        button_layout.addWidget(self.edit_btn)
+        button_layout.addWidget(self.remove_btn)
+        button_layout.addWidget(self.switch_btn)
+        button_layout.addWidget(self.toggle_btn)
+        button_layout.addStretch()
+        button_layout.addWidget(self.refresh_btn)
+
+        layout.addLayout(button_layout)
 
         # 默认禁用需要选择的按钮
         self.edit_btn.setEnabled(False)
@@ -245,37 +282,50 @@ class MainWindow(QMainWindow):
 
         return group
 
-    def create_current_proxy_group(self) -> QGroupBox:
+    def create_current_proxy_group(self) -> CardWidget:
         """创建当前代理信息组"""
-        group = QGroupBox("当前代理信息")
+        group = CardWidget()
         layout = QVBoxLayout(group)
 
+        # 添加标题
+        title = TitleLabel("当前代理信息")
+        layout.addWidget(title)
+
         # 当前代理标签
-        self.current_proxy_label = QLabel("未设置代理")
-        self.current_proxy_label.setFont(QFont("Arial", 12, QFont.Bold))
+        self.current_proxy_label = StrongBodyLabel("未设置代理")
         self.current_proxy_label.setStyleSheet("color: #666; padding: 10px;")
         layout.addWidget(self.current_proxy_label)
 
         # 代理详细信息
-        self.proxy_info_text = QTextEdit()
+        self.proxy_info_text = TextEdit()
         self.proxy_info_text.setReadOnly(True)
         self.proxy_info_text.setMaximumHeight(200)
         layout.addWidget(self.proxy_info_text)
 
         return group
 
-    def create_export_group(self) -> QGroupBox:
+    def create_export_group(self) -> CardWidget:
         """创建导出组"""
-        group = QGroupBox("环境变量导出")
+        group = CardWidget()
         layout = QVBoxLayout(group)
+
+        # 添加标题
+        title = TitleLabel("环境变量导出")
+        layout.addWidget(title)
 
         # 导出按钮布局
         button_layout = QHBoxLayout()
 
-        self.export_bash_btn = QPushButton("Bash")
-        self.export_fish_btn = QPushButton("Fish")
-        self.export_ps_btn = QPushButton("PowerShell")
-        self.export_custom_btn = QPushButton("自定义...")
+        self.export_bash_btn = PushButton("Bash")
+        self.export_fish_btn = PushButton("Fish")
+        self.export_ps_btn = PushButton("PowerShell")
+        self.export_custom_btn = PushButton("自定义...")
+
+        # 添加图标
+        self.export_bash_btn.setIcon(FluentIcon.DEVELOPER_TOOLS)
+        self.export_fish_btn.setIcon(FluentIcon.DEVELOPER_TOOLS)
+        self.export_ps_btn.setIcon(FluentIcon.DEVELOPER_TOOLS)
+        self.export_custom_btn.setIcon(FluentIcon.SETTING)
 
         button_layout.addWidget(self.export_bash_btn)
         button_layout.addWidget(self.export_fish_btn)
@@ -286,7 +336,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(button_layout)
 
         # 导出内容显示
-        self.export_text = QTextEdit()
+        self.export_text = TextEdit()
         self.export_text.setMaximumHeight(120)
         self.export_text.setReadOnly(True)
         self.export_text.setPlaceholderText("导出的环境变量将显示在这里...")
@@ -297,8 +347,10 @@ class MainWindow(QMainWindow):
 
         # 复制按钮
         copy_layout = QHBoxLayout()
-        self.copy_btn = QPushButton("复制到剪贴板")
-        self.save_btn = QPushButton("保存到文件")
+        self.copy_btn = PushButton("复制到剪贴板")
+        self.copy_btn.setIcon(FluentIcon.COPY)
+        self.save_btn = PushButton("保存到文件")
+        self.save_btn.setIcon(FluentIcon.SAVE)
         copy_layout.addWidget(self.copy_btn)
         copy_layout.addWidget(self.save_btn)
         copy_layout.addStretch()
@@ -308,12 +360,16 @@ class MainWindow(QMainWindow):
 
         return group
 
-    def create_stats_group(self) -> QGroupBox:
+    def create_stats_group(self) -> CardWidget:
         """创建统计信息组"""
-        group = QGroupBox("统计信息")
+        group = CardWidget()
         layout = QVBoxLayout(group)
 
-        self.stats_label = QLabel("加载中...")
+        # 添加标题
+        title = TitleLabel("统计信息")
+        layout.addWidget(title)
+
+        self.stats_label = BodyLabel("加载中...")
         self.stats_label.setWordWrap(True)
         layout.addWidget(self.stats_label)
 
@@ -366,37 +422,13 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
 
-    def setup_tool_bar(self):
-        """设置工具栏"""
-        toolbar = QToolBar("主工具栏")
-        self.addToolBar(toolbar)
-
-        # 添加操作到工具栏
-        add_action = QAction("添加", self)
-        add_action.triggered.connect(self.add_proxy)
-        toolbar.addAction(add_action)
-
-        edit_action = QAction("编辑", self)
-        edit_action.triggered.connect(self.edit_proxy)
-        toolbar.addAction(edit_action)
-
-        remove_action = QAction("删除", self)
-        remove_action.triggered.connect(self.remove_proxy)
-        toolbar.addAction(remove_action)
-
-        toolbar.addSeparator()
-
-        refresh_action = QAction("刷新", self)
-        refresh_action.triggered.connect(self.refresh_data)
-        toolbar.addAction(refresh_action)
-
     def setup_status_bar(self):
         """设置状态栏"""
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
 
         # 状态标签
-        self.status_label = QLabel("就绪")
+        self.status_label = BodyLabel("就绪")
         self.status_bar.addWidget(self.status_label)
 
         # 进度条
@@ -405,7 +437,7 @@ class MainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.progress_bar)
 
         # 代理数量标签
-        self.proxy_count_label = QLabel()
+        self.proxy_count_label = CaptionLabel()
         self.status_bar.addPermanentWidget(self.proxy_count_label)
 
     def setup_connections(self):
@@ -764,16 +796,14 @@ class MainWindow(QMainWindow):
             return
 
         # 确认删除
-        if ConfirmDialog.confirm(
-            self, "确认删除", f"确定要删除代理 '{proxy_name}' 吗?\\n\\n此操作无法撤销。"
-        ):
+        if ConfirmDialog.confirm(self, "确认删除", f"确定要删除 '{proxy_name}' 吗?"):
             try:
                 self.proxy_manager.remove_proxy(proxy_name)
                 self.refresh_data()
-                self.status_label.setText(f"代理 '{proxy_name}' 删除成功")
+                self.status_label.setText(f"'{proxy_name}' 删除成功")
                 self.proxy_removed.emit(proxy_name)
             except Exception as e:
-                self.show_error(f"删除代理失败: {e}")
+                self.show_error(f"删除失败: {e}")
 
     def switch_proxy(self):
         """切换代理"""
@@ -784,10 +814,10 @@ class MainWindow(QMainWindow):
         try:
             self.proxy_manager.switch_proxy(proxy_name)
             self.refresh_data()
-            self.status_label.setText(f"已切换到代理: {proxy_name}")
+            self.status_label.setText(f"已切换到: {proxy_name}")
             self.proxy_changed.emit(proxy_name)
         except Exception as e:
-            self.show_error(f"切换代理失败: {e}")
+            self.show_error(f"切换失败: {e}")
 
     def toggle_proxy_status(self):
         """切换代理启用状态"""
@@ -804,7 +834,7 @@ class MainWindow(QMainWindow):
             self.proxy_manager.update_proxy(proxy_name, is_active=new_status)
             self.refresh_data()
             status_text = "启用" if new_status else "禁用"
-            self.status_label.setText(f"代理 '{proxy_name}' 已{status_text}")
+            self.status_label.setText(f"'{proxy_name}' 已{status_text}")
         except Exception as e:
             self.show_error(f"切换代理状态失败: {e}")
 

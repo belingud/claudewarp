@@ -10,6 +10,8 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+from claudewarp.core.utils import LevelAlignFilter
+
 
 def setup_logging(debug: bool = False) -> None:
     """设置日志配置
@@ -22,9 +24,10 @@ def setup_logging(debug: bool = False) -> None:
 
         # 创建 colorlog handler
         handler = colorlog.StreamHandler()
+        handler.addFilter(LevelAlignFilter())
         handler.setFormatter(
             colorlog.ColoredFormatter(
-                "%(log_color)s[%(levelname)s]%(reset)s %(asctime)s %(name)s %(filename)s:%(lineno)d - %(message)s",
+                "%(log_color)s%(levelname_padded)s%(reset)s %(asctime)s %(name)s %(filename)s:%(lineno)d - %(message)s",
                 datefmt="%H:%M:%S",
                 log_colors={
                     "DEBUG": "cyan",
@@ -90,9 +93,11 @@ def main(debug: bool = False) -> int:
         app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
         app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-        # 设置应用样式
-        logger.debug("设置应用样式为 Fusion")
-        app.setStyle("Fusion")  # 使用Fusion样式获得更好的跨平台外观
+        # 设置Fluent主题
+        logger.debug("设置Fluent主题")
+        from qfluentwidgets import Theme, setTheme
+
+        setTheme(Theme.AUTO)  # 自动主题，根据系统设置切换
 
         # 创建主窗口
         logger.info("创建主窗口")

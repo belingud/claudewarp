@@ -19,6 +19,28 @@ from .exceptions import PermissionError as ClaudeWarpPermissionError
 from .exceptions import SystemError
 
 
+class LevelAlignFilter:
+    """把 levelname 变成 '[DEBUG]    ' 这种固定总宽的左对齐字符串"""
+
+    WIDTH = 8
+    LEVEL_MAP = {
+        "DEBUG": "DEBUG",
+        "INFO": "INFO",
+        "WARNING": "WARN",
+        "ERROR": "ERROR",
+        "CRITICAL": "CRIT",
+        "FATAL": "FATAL",
+        "NOTSET": "NOSET",
+    }
+
+    def filter(self, record):
+        # 原始 level 名
+        name = self.LEVEL_MAP.get(record.levelname, record.levelname)
+        # 构造固定宽度的前缀
+        record.levelname_padded = f"[{name}]{' ' * (self.WIDTH - len(name) - 2)}"
+        return True
+
+
 def get_platform_info() -> Dict[str, str]:
     """获取平台信息
 

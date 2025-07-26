@@ -14,11 +14,11 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from core.config import ConfigManager
-from core.manager import ProxyManager
+from claudewarp.core.config import ConfigManager
+from claudewarp.core.manager import ProxyManager
 
 # 导入需要的模块
-from core.models import ProxyConfig, ProxyServer
+from claudewarp.core.models import ProxyConfig, ProxyServer
 
 
 @pytest.fixture(scope="session")

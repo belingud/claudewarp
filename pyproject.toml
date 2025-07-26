@@ -32,6 +32,7 @@ dependencies = [
     "toml>=0.10.2",
     "rich>=13.0.0",
     "pyside6>=6.5.0",
+    "pyside6-fluent-widgets>=1.7.6",
     "colorlog>=6.7.0",
 ]
 
@@ -39,10 +40,10 @@ dependencies = [
 cw = "claudewarp.cli.main:main"
 
 [project.urls]
-Homepage = "https://github.com/claudewarp/claudewarp"
-Repository = "https://github.com/claudewarp/claudewarp"
-Issues = "https://github.com/claudewarp/claudewarp/issues"
-Documentation = "https://claudewarp.readthedocs.io"
+Homepage = "https://github.com/belingud/claudewarp"
+Repository = "https://github.com/belingud/claudewarp"
+Issues = "https://github.com/belingud/claudewarp/issues"
+Documentation = "https://github.com/belingud/claudewarp"
 
 [tool.hatch.build.targets.wheel]
 packages = ["claudewarp"]

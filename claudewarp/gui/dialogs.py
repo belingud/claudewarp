@@ -7,23 +7,27 @@ GUI对话框组件
 from typing import Any, Dict
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QCheckBox,
-    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
     QFrame,
-    QGroupBox,
     QHBoxLayout,
-    QLabel,
-    QLineEdit,
     QMessageBox,
     QProgressDialog,
-    QPushButton,
-    QTextEdit,
     QVBoxLayout,
+)
+
+# PyQt-Fluent-Widgets imports
+from qfluentwidgets import (
+    BodyLabel,
+    CardWidget,
+    CheckBox,
+    ComboBox,
+    LineEdit,
+    PrimaryPushButton,
+    TextEdit,
+    TitleLabel,
 )
 
 from claudewarp.core.models import ExportFormat, ProxyServer
@@ -49,44 +53,44 @@ class AddProxyDialog(QDialog):
         form_layout = QFormLayout()
 
         # 名称
-        self.name_edit = QLineEdit()
+        self.name_edit = LineEdit()
         self.name_edit.setPlaceholderText("输入代理名称，如: proxy-cn")
         form_layout.addRow("代理名称 *:", self.name_edit)
 
         # URL
-        self.url_edit = QLineEdit()
+        self.url_edit = LineEdit()
         self.url_edit.setPlaceholderText("输入代理URL，如: https://api.example.com/")
         form_layout.addRow("代理URL *:", self.url_edit)
 
         # API密钥
-        self.key_edit = QLineEdit()
-        self.key_edit.setEchoMode(QLineEdit.Password)
+        self.key_edit = LineEdit()
+        self.key_edit.setEchoMode(LineEdit.Password)
         self.key_edit.setPlaceholderText("输入API密钥")
         form_layout.addRow("API密钥 *:", self.key_edit)
 
         # 显示密钥复选框
-        self.show_key_check = QCheckBox("显示密钥")
+        self.show_key_check = CheckBox("显示密钥")
         form_layout.addRow("", self.show_key_check)
 
         # 描述
-        self.desc_edit = QLineEdit()
+        self.desc_edit = LineEdit()
         self.desc_edit.setPlaceholderText("输入描述信息（可选）")
         form_layout.addRow("描述:", self.desc_edit)
 
         # 标签
-        self.tags_edit = QLineEdit()
+        self.tags_edit = LineEdit()
         self.tags_edit.setPlaceholderText("输入标签，用逗号分隔（可选）")
         form_layout.addRow("标签:", self.tags_edit)
 
         # 启用状态
-        self.active_check = QCheckBox("启用此代理")
+        self.active_check = CheckBox("启用此代理")
         self.active_check.setChecked(True)
         form_layout.addRow("", self.active_check)
 
         layout.addLayout(form_layout)
 
         # 提示信息
-        info_label = QLabel("* 表示必填字段")
+        info_label = BodyLabel("* 表示必填字段")
         info_label.setStyleSheet("color: #666; font-size: 12px;")
         layout.addWidget(info_label)
 
@@ -121,9 +125,9 @@ class AddProxyDialog(QDialog):
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
-            self.key_edit.setEchoMode(QLineEdit.Normal)
+            self.key_edit.setEchoMode(LineEdit.Normal)
         else:
-            self.key_edit.setEchoMode(QLineEdit.Password)
+            self.key_edit.setEchoMode(LineEdit.Password)
 
     def validate_input(self):
         """验证输入"""
@@ -189,32 +193,32 @@ class EditProxyDialog(QDialog):
         form_layout = QFormLayout()
 
         # 名称
-        self.name_edit = QLineEdit()
+        self.name_edit = LineEdit()
         form_layout.addRow("代理名称 *:", self.name_edit)
 
         # URL
-        self.url_edit = QLineEdit()
+        self.url_edit = LineEdit()
         form_layout.addRow("代理URL *:", self.url_edit)
 
         # API密钥
-        self.key_edit = QLineEdit()
-        self.key_edit.setEchoMode(QLineEdit.Password)
+        self.key_edit = LineEdit()
+        self.key_edit.setEchoMode(LineEdit.Password)
         form_layout.addRow("API密钥 *:", self.key_edit)
 
         # 显示密钥复选框
-        self.show_key_check = QCheckBox("显示密钥")
+        self.show_key_check = CheckBox("显示密钥")
         form_layout.addRow("", self.show_key_check)
 
         # 描述
-        self.desc_edit = QLineEdit()
+        self.desc_edit = LineEdit()
         form_layout.addRow("描述:", self.desc_edit)
 
         # 标签
-        self.tags_edit = QLineEdit()
+        self.tags_edit = LineEdit()
         form_layout.addRow("标签:", self.tags_edit)
 
         # 启用状态
-        self.active_check = QCheckBox("启用此代理")
+        self.active_check = CheckBox("启用此代理")
         form_layout.addRow("", self.active_check)
 
         layout.addLayout(form_layout)
@@ -256,9 +260,9 @@ class EditProxyDialog(QDialog):
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
-            self.key_edit.setEchoMode(QLineEdit.Normal)
+            self.key_edit.setEchoMode(LineEdit.Normal)
         else:
-            self.key_edit.setEchoMode(QLineEdit.Password)
+            self.key_edit.setEchoMode(LineEdit.Password)
 
     def validate_input(self):
         """验证输入"""
@@ -316,7 +320,7 @@ class ConfirmDialog(QDialog):
         layout = QVBoxLayout(self)
 
         # 消息标签
-        message_label = QLabel(message)
+        message_label = BodyLabel(message)
         message_label.setWordWrap(True)
         layout.addWidget(message_label)
 
@@ -342,7 +346,7 @@ class ExportDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("自定义环境变量导出")
+        self.setWindowTitle("自定义")
         self.setMinimumSize(400, 250)
         self.setModal(True)
 
@@ -357,30 +361,29 @@ class ExportDialog(QDialog):
         form_layout = QFormLayout()
 
         # Shell类型
-        self.shell_combo = QComboBox()
+        self.shell_combo = ComboBox()
         self.shell_combo.addItems(["bash", "fish", "powershell", "zsh"])
         form_layout.addRow("Shell类型:", self.shell_combo)
 
         # 环境变量前缀
-        self.prefix_edit = QLineEdit("ANTHROPIC_")
+        self.prefix_edit = LineEdit()
+        self.prefix_edit.setText("ANTHROPIC_")
         form_layout.addRow("变量前缀:", self.prefix_edit)
 
-        # 包含注释
-        self.comments_check = QCheckBox("包含注释")
-        self.comments_check.setChecked(True)
-        form_layout.addRow("", self.comments_check)
-
         # 导出所有代理
-        self.export_all_check = QCheckBox("导出所有代理（默认只导出当前代理）")
+        self.export_all_check = CheckBox("导出所有代理（默认只导出当前代理）")
         form_layout.addRow("", self.export_all_check)
 
         layout.addLayout(form_layout)
 
         # 预览区域
-        preview_group = QGroupBox("预览")
+        preview_group = CardWidget()
         preview_layout = QVBoxLayout(preview_group)
 
-        self.preview_text = QTextEdit()
+        preview_title = TitleLabel("预览")
+        preview_layout.addWidget(preview_title)
+
+        self.preview_text = TextEdit()
         self.preview_text.setReadOnly(True)
         self.preview_text.setMaximumHeight(100)
         preview_layout.addWidget(self.preview_text)
@@ -404,7 +407,6 @@ class ExportDialog(QDialog):
         """设置信号连接"""
         self.shell_combo.currentTextChanged.connect(self.update_preview)
         self.prefix_edit.textChanged.connect(self.update_preview)
-        self.comments_check.toggled.connect(self.update_preview)
         self.export_all_check.toggled.connect(self.update_preview)
 
     def update_preview(self):
@@ -422,9 +424,6 @@ class ExportDialog(QDialog):
             else:
                 example = f'export {export_format.prefix}BASE_URL="https://example.com/"'
 
-            if export_format.include_comments:
-                example = f"# 示例环境变量\n{example}"
-
             self.preview_text.setPlainText(example)
 
         except Exception as e:
@@ -434,7 +433,7 @@ class ExportDialog(QDialog):
         """获取导出格式"""
         return ExportFormat(
             shell_type=self.shell_combo.currentText(),
-            include_comments=self.comments_check.isChecked(),
+            include_comments=False,  # 固定为 False，不包含注释
             prefix=self.prefix_edit.text(),
             export_all=self.export_all_check.isChecked(),
         )
@@ -466,11 +465,10 @@ class AboutDialog(QDialog):
 
         title_info = QVBoxLayout()
 
-        app_name = QLabel("Claude中转站管理工具")
-        app_name.setFont(QFont("Arial", 16, QFont.Bold))
+        app_name = TitleLabel("Claude中转站管理工具")
         title_info.addWidget(app_name)
 
-        version_label = QLabel("版本 0.1.0")
+        version_label = BodyLabel("版本 0.1.0")
         version_label.setStyleSheet("color: #666;")
         title_info.addWidget(version_label)
 
@@ -486,7 +484,7 @@ class AboutDialog(QDialog):
         layout.addWidget(line)
 
         # 描述信息
-        description = QLabel(
+        description = BodyLabel(
             """
 一个用于管理和切换Claude API代理服务器的工具。
 
@@ -511,7 +509,7 @@ class AboutDialog(QDialog):
         layout.addStretch()
 
         # 关闭按钮
-        close_btn = QPushButton("关闭")
+        close_btn = PrimaryPushButton("关闭")
         close_btn.clicked.connect(self.accept)
 
         button_layout = QHBoxLayout()
