@@ -1,0 +1,285 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: claudewarp
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing dependencies with uv..."
+        uv sync --all-groups --all-extras
+        echo "✅ Dependencies installed successfully"
+    
+    - name: Run tests
+      run: |
+        echo "🧪 Running tests..."
+        uv run pytest tests/ -v --cov=claudewarp --cov-report=xml
+        echo "✅ Tests completed"
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      if: success()
+      with:
+        file: ./coverage.xml
+
+  build:
+    needs: test
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+          - os: macos-13
+            platform: macos
+            arch: x64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+          # 可选：添加Linux支持
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: x64
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Install system dependencies (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        echo "🍎 Setting up macOS dependencies..."
+        # macOS特定依赖
+        brew install create-dmg
+        echo "✅ macOS dependencies installed"
+    
+    - name: Install system dependencies (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        echo "🪟 Setting up Windows dependencies..."
+        # Windows特定依赖（如需要）
+        echo "Windows build setup complete"
+    
+    - name: Install Python dependencies
+      run: |
+        echo "📦 Installing Python dependencies with uv..."
+        echo "UV version: $(uv --version)"
+        uv sync --all-groups --all-extras
+        echo "✅ Dependencies installed successfully"
+    
+    - name: Build with Nuitka (Windows)
+      if: matrix.platform == 'windows'
+      run: |
+        echo "🔨 Building Windows application with Nuitka..."
+        echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
+        echo "Python version: $(uv run python --version)"
+        echo "Nuitka version: $(uv run python -m nuitka --version)"
+        
+        uv run python -m nuitka --standalone \
+          --enable-plugin=pyside6 \
+          --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico \
+          --output-filename=claudewarp.exe \
+          --verbose \
+          --show-progress \
+          main.py
+        
+        echo "📁 Renaming output directory..."
+        if [ -d "main.dist" ]; then
+          mv main.dist claudewarp.dist
+          echo "✅ Renamed main.dist to claudewarp.dist"
+        else
+          echo "❌ main.dist not found!"
+          ls -la
+        fi
+        
+        echo "📋 Build output:"
+        ls -la claudewarp.*
+    
+    - name: Build with Nuitka (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        echo "🍎 Building macOS application with Nuitka..."
+        echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
+        echo "macOS version: $(sw_vers -productVersion)"
+        echo "Architecture: $(uname -m)"
+        echo "Python version: $(uv run python --version)"
+        echo "Nuitka version: $(uv run python -m nuitka --version)"
+        
+        uv run python -m nuitka --standalone \
+          --macos-create-app-bundle \
+          --enable-plugin=pyside6 \
+          --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
+          --macos-app-name=ClaudeWarp \
+          --output-filename=claudewarp \
+          --verbose \
+          --show-progress \
+          main.py
+        
+        echo "📁 Renaming output app bundle..."
+        if [ -d "main.app" ]; then
+          mv main.app ClaudeWarp.app
+          echo "✅ Renamed main.app to ClaudeWarp.app"
+        else
+          echo "❌ main.app not found!"
+          ls -la
+        fi
+        
+        echo "📋 Build output:"
+        ls -la ClaudeWarp.app
+        echo "📋 App bundle contents:"
+        ls -la ClaudeWarp.app/Contents/
+    
+    - name: Create DMG (macOS)
+      if: matrix.platform == 'macos'
+      run: |
+        echo "💿 Creating DMG package for macOS..."
+        if [ -d "ClaudeWarp.app" ]; then
+          echo "✅ ClaudeWarp.app found, creating DMG..."
+          
+          create-dmg \
+            --volname "ClaudeWarp" \
+            --volicon "ClaudeWarp.app/Contents/Resources/claudewarp.ico" \
+            --window-pos 200 120 \
+            --window-size 600 300 \
+            --icon-size 100 \
+            --icon "ClaudeWarp.app" 175 120 \
+            --hide-extension "ClaudeWarp.app" \
+            --app-drop-link 425 120 \
+            "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.dmg" \
+            "ClaudeWarp.app" || echo "❌ DMG creation failed, will use ZIP instead"
+          
+          if [ -f "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.dmg" ]; then
+            echo "✅ DMG created successfully"
+            ls -la *.dmg
+          else
+            echo "⚠️ DMG not found, creating ZIP fallback..."
+            zip -r "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip" ClaudeWarp.app
+          fi
+        else
+          echo "❌ ClaudeWarp.app not found!"
+          ls -la
+        fi
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.PROJECT_NAME }}-${{ matrix.platform }}-${{ matrix.arch }}
+        path: |
+          *.zip
+          *.dmg
+          *.tar.gz
+          *.exe
+          ClaudeWarp.app
+          claudewarp.dist
+        retention-days: 30
+    
+    - name: Debug - List all files
+      run: |
+        echo "📋 All files in current directory:"
+        ls -la
+        echo "📁 Checking for build artifacts:"
+        find . -name "*.zip" -o -name "*.dmg" -o -name "*.exe" -o -name "ClaudeWarp.app" -o -name "claudewarp.dist" | head -20
+    
+    - name: Get version
+      if: startsWith(github.ref, 'refs/tags/')
+      id: version
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        name: ClaudeWarp v${{ steps.version.outputs.VERSION }}
+        body: |
+          ## ClaudeWarp v${{ steps.version.outputs.VERSION }}
+          
+          ### 下载
+          
+          - **macOS Intel**: `claudewarp-${{ steps.version.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
+          - **macOS Apple Silicon**: `claudewarp-${{ steps.version.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
+          - **Windows**: `claudewarp-${{ steps.version.outputs.VERSION }}-windows-x64.zip`
+          
+          ### 安装说明
+          
+          #### macOS
+          1. 下载 `.dmg` 文件或 `.zip` 压缩包
+          2. 如果是 `.dmg`：双击打开，拖拽 ClaudeWarp.app 到应用程序文件夹
+          3. 如果是 `.zip`：解压后将 ClaudeWarp.app 移动到应用程序文件夹
+          4. 首次运行可能需要在系统偏好设置中允许运行
+          
+          #### Windows
+          1. 下载 `.zip` 压缩包
+          2. 解压到目标目录
+          3. 运行 `claudewarp.exe`
+          
+          ### 变更日志
+          
+          请查看 [CHANGELOG.md](CHANGELOG.md) 了解详细变更内容。
+        files: |
+          *.zip
+          *.dmg
+          *.tar.gz
+          *.exe
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Build Status
+      run: |
+        echo "📊 Build Summary:"
+        echo "Test result: ${{ needs.test.result }}"
+        echo "Build result: ${{ needs.build.result }}"
+        
+        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
+          echo "✅ All builds completed successfully!"
+        else
+          echo "❌ Build failed!"
+          echo "Test status: ${{ needs.test.result }}"
+          echo "Build status: ${{ needs.build.result }}"
+          exit 1
+        fi

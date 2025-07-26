@@ -1,0 +1,113 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claudewarp"
+version = "0.1.0"
+description = "Claude API proxy management tool with CLI and GUI"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "claudewarp", email = "im.victor@qq.com" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+keywords = ["claude", "api", "proxy", "management", "cli", "gui"]
+requires-python = ">=3.8"
+
+dependencies = [
+    "typer>=0.9.0",
+    "pydantic>=2.0.0",
+    "toml>=0.10.2",
+    "rich>=13.0.0",
+    "pyside6>=6.5.0",
+    "colorlog>=6.7.0",
+]
+
+[project.scripts]
+cw = "claudewarp.cli.main:main"
+
+[project.urls]
+Homepage = "https://github.com/claudewarp/claudewarp"
+Repository = "https://github.com/claudewarp/claudewarp"
+Issues = "https://github.com/claudewarp/claudewarp/issues"
+Documentation = "https://claudewarp.readthedocs.io"
+
+[tool.hatch.build.targets.wheel]
+packages = ["claudewarp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=core",
+    "--cov=cli",
+    "--cov=gui",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "gui: GUI tests",
+    "cli: CLI tests",
+    "slow: Slow running tests",
+]
+
+[tool.coverage.run]
+source = ["core", "cli", "gui"]
+omit = ["*/tests/*", "*/test_*", "*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["core", "cli", "gui"]
+skip = [".gitignore", ".dockerignore", ".venv", "build", "dist"]
+
+[dependency-groups]
+build = ["imageio>=2.35.1", "nuitka>=2.7.12", "zstandard>=0.23.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-qt>=4.2.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pre-commit>=3.0.0",
+]
+
+docs = [
+    "mkdocs>=1.4.0",
+    "mkdocs-material>=9.0.0",
+    "mkdocstrings[python]>=0.20.0",
+]

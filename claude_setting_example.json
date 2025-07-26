@@ -1,0 +1,16 @@
+{
+    "env": {
+      "ANTHROPIC_API_KEY": "sk-xxx",
+      "ANTHROPIC_BASE_URL": "https://xxx.com",
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
+    },
+    "permissions": {
+      "allow": [
+        "Bash(rg:*)",
+        "Bash(uv run pytest:*)",
+        "Bash(find:*)",
+        "Bash(ls -la:*)"
+      ],
+      "deny": []
+    }
+  }
