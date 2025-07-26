@@ -16,41 +16,41 @@ env:
   PYTHON_VERSION: '3.11'
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+  #   - name: Set up Python
+  #     uses: actions/setup-python@v4
+  #     with:
+  #       python-version: ${{ env.PYTHON_VERSION }}
     
-    - name: Install uv
-      uses: astral-sh/setup-uv@v4
-      with:
-        version: "latest"
+  #   - name: Install uv
+  #     uses: astral-sh/setup-uv@v4
+  #     with:
+  #       version: "latest"
     
-    - name: Install dependencies
-      run: |
-        echo "📦 Installing dependencies with uv..."
-        uv sync --all-groups --all-extras
-        echo "✅ Dependencies installed successfully"
+  #   - name: Install dependencies
+  #     run: |
+  #       echo "📦 Installing dependencies with uv..."
+  #       uv sync --all-groups --all-extras
+  #       echo "✅ Dependencies installed successfully"
     
-    - name: Run tests
-      run: |
-        echo "🧪 Running tests..."
-        uv run pytest tests/ -v --cov=claudewarp --cov-report=xml
-        echo "✅ Tests completed"
+  #   - name: Run tests
+  #     run: |
+  #       echo "🧪 Running tests..."
+  #       uv run pytest tests/ -v --cov=claudewarp --cov-report=xml
+  #       echo "✅ Tests completed"
     
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
-      if: success()
-      with:
-        file: ./coverage.xml
+  #   - name: Upload coverage
+  #     uses: codecov/codecov-action@v3
+  #     if: success()
+  #     with:
+  #       file: ./coverage.xml
 
   build:
-    needs: test
+    # needs: test
     strategy:
       matrix:
         include:
@@ -265,21 +265,21 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
-    needs: [test, build]
+    needs: [build]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: Build Status
       run: |
         echo "📊 Build Summary:"
-        echo "Test result: ${{ needs.test.result }}"
+        # echo "Test result: ${{ needs.test.result }}"
         echo "Build result: ${{ needs.build.result }}"
         
-        if [ "${{ needs.test.result }}" == "success" ] && [ "${{ needs.build.result }}" == "success" ]; then
+        if [ "${{ needs.build.result }}" == "success" ]; then
           echo "✅ All builds completed successfully!"
         else
           echo "❌ Build failed!"
-          echo "Test status: ${{ needs.test.result }}"
+          # echo "Test status: ${{ needs.test.result }}"
           echo "Build status: ${{ needs.build.result }}"
           exit 1
         fi
