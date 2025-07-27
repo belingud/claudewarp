@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/belingud/claudewarp/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
+    <img src="https://img.shields.io/badge/License-LGPL%20v3-blue.svg" alt="License">
   </a>
   <a href="https://github.com/belingud/claudewarp/releases">
     <img src="https://img.shields.io/github/v/release/belingud/claudewarp?include_prereleases" alt="Release">
@@ -269,7 +269,7 @@ uv run pytest --cov=claudewarp --cov-report=html
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+本项目采用 GNU Lesser General Public License v3.0 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 🙏 致谢
 
