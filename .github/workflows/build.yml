@@ -114,7 +114,7 @@ jobs:
         Write-Output "Python version: $(uv run python --version)"
         Write-Output "Nuitka version: $(uv run python -m nuitka --version)"
         
-        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --verbose --show-progress main.py
+        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --show-progress main.py
         
         Write-Output "📁 Renaming output directory..."
         if (Test-Path "main.dist") {
@@ -144,7 +144,6 @@ jobs:
           --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
           --macos-app-name=ClaudeWarp \
           --output-filename=claudewarp \
-          --verbose \
           --show-progress \
           main.py
         

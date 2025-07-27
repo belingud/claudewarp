@@ -56,11 +56,7 @@
 git clone https://github.com/belingud/claudewarp.git
 cd claudewarp
 
-# 使用 uv 安装依赖（推荐）
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv sync --all-groups --all-extras
-
-# 或使用 pip 安装
+# 使用 pip 安装
 pip install -e .
 ```
 
@@ -87,6 +83,8 @@ cw --help
 
 # 添加代理服务器
 cw add --name proxy-cn --url https://api.claude-proxy.com/ --key sk-your-api-key
+# 或使用交互式
+cw add
 
 # 查看所有代理
 cw list
@@ -105,19 +103,19 @@ cw export
 
 ### CLI 命令参考
 
-| 命令 | 说明 | 示例 |
-|------|------|------|
-| `cw add` | 添加新的代理服务器 | `cw add --name proxy-hk --url https://hk.api.com/ --key sk-xxx` |
-| `cw list` | 列出所有代理服务器 | `cw list` |
-| `cw use <name>` | 切换到指定代理 | `cw use proxy-cn` |
-| `cw current` | 显示当前活跃代理 | `cw current` |
-| `cw remove <name>` | 删除指定代理 | `cw remove proxy-old` |
-| `cw export` | 导出环境变量 | `cw export --shell bash` |
-| `cw test <name>` | 测试代理连通性 | `cw test proxy-cn` |
+| 命令               | 说明               | 示例                                                            |
+| ------------------ | ------------------ | --------------------------------------------------------------- |
+| `cw add`           | 添加新的代理服务器 | `cw add --name proxy-hk --url https://hk.api.com/ --key sk-xxx` |
+| `cw list`          | 列出所有代理服务器 | `cw list`                                                       |
+| `cw use <name>`    | 切换到指定代理     | `cw use proxy-cn`                                               |
+| `cw current`       | 显示当前活跃代理   | `cw current`                                                    |
+| `cw remove <name>` | 删除指定代理       | `cw remove proxy-old`                                           |
+| `cw export`        | 导出环境变量       | `cw export --shell bash`                                        |
+| `cw test <name>`   | 测试代理连通性     | `cw test proxy-cn`                                              |
 
 ### 配置文件
 
-配置文件位于：`~/.claudewarp/config.toml`
+配置文件位于：`~/.config/claudewarp/config.toml`
 
 ```toml
 version = "1.0"
@@ -280,7 +278,6 @@ uv run pytest --cov=claudewarp --cov-report=html
 
 ## 🔗 相关链接
 
-- [文档站点](https://claudewarp.readthedocs.io)
 - [问题反馈](https://github.com/belingud/claudewarp/issues)
 - [变更日志](https://github.com/belingud/claudewarp/releases)
 - [讨论区](https://github.com/belingud/claudewarp/discussions)
