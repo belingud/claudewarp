@@ -66,10 +66,9 @@ jobs:
           - os: windows-latest
             platform: windows
             arch: x64
-          # 可选：添加Linux支持
-          # - os: ubuntu-latest
-          #   platform: linux
-          #   arch: x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
     
     runs-on: ${{ matrix.os }}
     
@@ -116,12 +115,56 @@ jobs:
         # Windows特定依赖（如需要）
         Write-Output "Windows build setup complete"
     
+    - name: Install system dependencies (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "🐧 Setting up Linux dependencies..."
+        echo "Ubuntu version: $(lsb_release -d)"
+        echo "Architecture: $(uname -m)"
+        
+        # Update package list
+        sudo apt-get update
+        
+        # Install GUI dependencies for PySide6
+        echo "📦 Installing Qt and GUI dependencies..."
+        sudo apt-get install -y \
+          libqt6gui6 \
+          libqt6widgets6 \
+          libqt6core6 \
+          qt6-base-dev \
+          libxcb-xinerama0 \
+          libxcb-cursor0 \
+          libgl1-mesa-glx \
+          libegl1-mesa \
+          libfontconfig1 \
+          libglib2.0-0 \
+          libgtk-3-0 \
+          libx11-xcb1 \
+          libxkbcommon-x11-0
+        
+        # Install AppImage tools for packaging
+        echo "📦 Installing AppImage tools..."
+        wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+        chmod +x appimagetool-x86_64.AppImage
+        sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
+        
+        echo "✅ Linux dependencies installed"
+    
     - name: Install Python dependencies (macOS)
       if: matrix.platform == 'macos'
       run: |
         echo "📦 Installing Python dependencies with uv..."
         echo "UV version: $(uv --version)"
+        echo "Python version: $(uv run python --version)"
+        echo "Architecture: $(uname -m)"
+        echo "macOS version: $(sw_vers -productVersion)"
+        
+        # Install dependencies with optimization flags
         uv sync --all-groups --all-extras
+        
+        # Show installed packages for debugging
+        echo "=== Installed packages ==="
+        uv run pip list | head -20
         echo "✅ Dependencies installed successfully"
     
     - name: Install Python dependencies (Windows)
@@ -132,6 +175,14 @@ jobs:
         Write-Output "UV version: $(uv --version)"
         uv sync --all-groups --all-extras
         Write-Output "✅ Dependencies installed successfully"
+    
+    - name: Install Python dependencies (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "📦 Installing Python dependencies with uv..."
+        echo "UV version: $(uv --version)"
+        uv sync --all-groups --all-extras
+        echo "✅ Dependencies installed successfully"
     
     - name: Build with PyInstaller (Windows)
       if: matrix.platform == 'windows'
@@ -150,6 +201,28 @@ jobs:
         echo "🍎 Building macOS application with PyInstaller..."
         echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
         echo "macOS version: $(sw_vers -productVersion)"
+        echo "Architecture: $(uname -m)"
+        echo "Python version: $(uv run python --version)"
+        
+        # Set optimization flags for consistent builds
+        export PYTHONOPTIMIZE=2
+        export PYTHONDONTWRITEBYTECODE=1
+        
+        # Show system info for debugging size differences
+        echo "=== System Information ==="
+        echo "Available memory: $(vm_stat | grep 'Pages free' | awk '{print $3}' | sed 's/\.//')"
+        echo "Python location: $(which python3)"
+        echo "UV Python: $(uv run which python)"
+        
+        # Run the Unix build script
+        bash scripts/build_pyinstaller.sh
+    
+    - name: Build with PyInstaller (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "🐧 Building Linux application with PyInstaller..."
+        echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
+        echo "Ubuntu version: $(lsb_release -d)"
         echo "Architecture: $(uname -m)"
         echo "Python version: $(uv run python --version)"
         
@@ -231,6 +304,91 @@ jobs:
           ls -la dist/
         fi
     
+    - name: Create AppImage (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "📦 Creating AppImage package for Linux..."
+        if [ -f "dist/claudewarp" ]; then
+          echo "✅ claudewarp executable found, creating AppImage..."
+          
+          # Determine AppImage name based on version
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
+            VERSION="${GITHUB_REF#refs/tags/}"  # Remove refs/tags/
+            VERSION="${VERSION#v}"              # Remove leading v if present
+            APPIMAGE_NAME="ClaudeWarp-$VERSION-linux-${{ matrix.arch }}.AppImage"
+          else
+            APPIMAGE_NAME="ClaudeWarp-linux-${{ matrix.arch }}.AppImage"
+          fi
+          
+          # Create AppDir structure
+          mkdir -p ClaudeWarp.AppDir/usr/bin
+          mkdir -p ClaudeWarp.AppDir/usr/share/applications
+          mkdir -p ClaudeWarp.AppDir/usr/share/icons/hicolor/256x256/apps
+          
+          # Copy executable
+          cp dist/claudewarp ClaudeWarp.AppDir/usr/bin/
+          
+          # Create desktop file
+          cat > ClaudeWarp.AppDir/claudewarp.desktop << EOF
+        [Desktop Entry]
+        Type=Application
+        Name=ClaudeWarp
+        Comment=Claude API proxy server manager
+        Exec=claudewarp
+        Icon=claudewarp
+        Categories=Development;Network;
+        Terminal=false
+        EOF
+          
+          # Copy desktop file to standard location
+          cp ClaudeWarp.AppDir/claudewarp.desktop ClaudeWarp.AppDir/usr/share/applications/
+          
+          # Create a simple icon (placeholder - replace with actual icon if available)
+          if [ -f "claudewarp/gui/resources/icons/claudewarp.png" ]; then
+            cp claudewarp/gui/resources/icons/claudewarp.png ClaudeWarp.AppDir/claudewarp.png
+            cp claudewarp/gui/resources/icons/claudewarp.png ClaudeWarp.AppDir/usr/share/icons/hicolor/256x256/apps/claudewarp.png
+          else
+            # Create a simple placeholder icon using ImageMagick if available
+            echo "⚠️ No icon found, creating placeholder"
+            if command -v convert >/dev/null 2>&1; then
+              convert -size 256x256 xc:blue ClaudeWarp.AppDir/claudewarp.png
+              cp ClaudeWarp.AppDir/claudewarp.png ClaudeWarp.AppDir/usr/share/icons/hicolor/256x256/apps/claudewarp.png
+            else
+              # Fallback: create empty files
+              touch ClaudeWarp.AppDir/claudewarp.png
+              touch ClaudeWarp.AppDir/usr/share/icons/hicolor/256x256/apps/claudewarp.png
+            fi
+          fi
+          
+          # Create AppRun script
+          cat > ClaudeWarp.AppDir/AppRun << 'EOF'
+        #!/bin/bash
+        # Change to the directory where the AppImage is located
+        HERE="$(dirname "$(readlink -f "${0}")")"
+        exec "${HERE}/usr/bin/claudewarp" "$@"
+        EOF
+          chmod +x ClaudeWarp.AppDir/AppRun
+          
+          # Create AppImage
+          echo "🔧 Creating AppImage: $APPIMAGE_NAME"
+          if appimagetool ClaudeWarp.AppDir "$APPIMAGE_NAME"; then
+            echo "✅ AppImage created successfully: $APPIMAGE_NAME"
+            ls -la "$APPIMAGE_NAME"
+          else
+            echo "❌ AppImage creation failed, but continuing with ZIP package"
+            echo "📁 AppDir contents:"
+            find ClaudeWarp.AppDir -type f | head -20
+          fi
+          
+          # Clean up
+          rm -rf ClaudeWarp.AppDir
+          
+        else
+          echo "❌ claudewarp executable not found!"
+          ls -la dist/
+        fi
+    
     - name: Create release packages (macOS)
       if: matrix.platform == 'macos'
       run: |
@@ -292,6 +450,62 @@ jobs:
           Write-Output "❌ claudewarp.exe not found!"
         }
     
+    - name: Create release packages (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "📦 Creating Linux release packages..."
+        
+        # Linux packages
+        if [ -f "dist/claudewarp" ]; then
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
+            VERSION="${GITHUB_REF#refs/tags/}"  # Remove refs/tags/
+            VERSION="${VERSION#v}"              # Remove leading v if present
+            ZIP_NAME="ClaudeWarp-$VERSION-linux-${{ matrix.arch }}.zip"
+          else
+            ZIP_NAME="ClaudeWarp-linux-${{ matrix.arch }}.zip"
+          fi
+          
+          # Create ZIP with executable and documentation
+          mkdir -p linux-package
+          cp dist/claudewarp linux-package/
+          cp README.md linux-package/ 2>/dev/null || echo "README.md not found, skipping..."
+          cp LICENSE linux-package/ 2>/dev/null || echo "LICENSE not found, skipping..."
+          
+          # Create Linux-specific usage file
+          cat > linux-package/USAGE.txt << EOF
+        ClaudeWarp Linux Application
+        
+        This is the Linux version of ClaudeWarp GUI application.
+        
+        Usage:
+          ./claudewarp
+          
+        Features:
+          - Manage Claude API proxy servers
+          - Add, edit, and delete proxy configurations
+          - Switch between different proxies
+          - Export settings for Claude Code integration
+          - GUI interface with Qt/PySide6
+        
+        Requirements:
+          - Linux with X11 or Wayland
+          - Qt6 libraries (usually pre-installed)
+          
+        For AppImage version, download the .AppImage file instead.
+        EOF
+          
+          # Create ZIP
+          cd linux-package && zip -r "../$ZIP_NAME" * && cd ..
+          rm -rf linux-package
+          echo "✅ Linux ZIP package created: $ZIP_NAME"
+          
+          # List all created packages
+          ls -la *.zip *.AppImage 2>/dev/null || ls -la *.zip
+        else
+          echo "❌ claudewarp executable not found!"
+        fi
+    
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -299,6 +513,7 @@ jobs:
         path: |
           *.zip
           *.dmg
+          *.AppImage
           dist/
         retention-days: 30
     
@@ -318,6 +533,14 @@ jobs:
         ls -la
         echo "📁 Checking for build artifacts:"
         find . -name "*.zip" -o -name "*.dmg" -o -name "dist" | head -20
+    
+    - name: Debug - List all files (Linux)
+      if: matrix.platform == 'linux'
+      run: |
+        echo "📋 All files in current directory:"
+        ls -la
+        echo "📁 Checking for build artifacts:"
+        find . -name "*.zip" -o -name "*.AppImage" -o -name "dist" | head -20
     
     - name: Get version (Unix)
       if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'macos'
@@ -357,6 +580,7 @@ jobs:
           - **macOS Intel**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
           - **macOS Apple Silicon**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
           - **Windows**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-windows-x64.zip`
+          - **Linux**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-linux-x64.zip` 或 `.AppImage`
           
           ### 安装说明
           
@@ -371,12 +595,26 @@ jobs:
           2. 解压得到 `claudewarp.exe`
           3. 运行 `claudewarp.exe`
           
+          #### Linux
+          1. **AppImage (推荐)**：下载 `.AppImage` 文件，添加执行权限后直接运行
+             ```bash
+             chmod +x ClaudeWarp-*.AppImage
+             ./ClaudeWarp-*.AppImage
+             ```
+          2. **ZIP包**：下载 `.zip` 压缩包，解压后运行 `claudewarp` 可执行文件
+             ```bash
+             unzip ClaudeWarp-*-linux-x64.zip
+             cd linux-package
+             ./claudewarp
+             ```
+          
           ### 变更日志
           
           请查看 [CHANGELOG.md](CHANGELOG.md) 了解详细变更内容。
         files: |
           *.zip
           *.dmg
+          *.AppImage
         draft: false
         prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
         token: ${{ secrets.GITHUB_TOKEN }}
