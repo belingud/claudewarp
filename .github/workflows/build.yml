@@ -243,7 +243,17 @@ jobs:
           claudewarp.dist
         retention-days: 30
     
-    - name: Debug - List all files
+    - name: Debug - List all files (Windows)
+      if: matrix.platform == 'windows'
+      shell: pwsh
+      run: |
+        Write-Output "📋 All files in current directory:"
+        Get-ChildItem
+        Write-Output "📁 Checking for build artifacts:"
+        Get-ChildItem -Recurse -Include "*.zip","*.exe","claudewarp.dist" | Select-Object -First 20
+    
+    - name: Debug - List all files (macOS)
+      if: matrix.platform == 'macos'
       run: |
         echo "📋 All files in current directory:"
         ls -la
