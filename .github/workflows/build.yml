@@ -177,29 +177,28 @@ jobs:
           ls -la dist/
         fi
     
-    - name: Create release packages
+    - name: Create release packages (macOS)
+      if: matrix.platform == 'macos'
       run: |
         echo "📦 Creating release packages..."
         
-        if [[ "${{ matrix.platform }}" == "macos" ]]; then
-          # macOS packages
-          if [ -d "dist/ClaudeWarp.app" ]; then
-            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-              VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
-              ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
-            else
-              ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
-            fi
-            
-            # Create ZIP
-            cd dist && zip -r "../$ZIP_NAME" ClaudeWarp.app && cd ..
-            echo "✅ macOS ZIP package created: $ZIP_NAME"
-            
-            # List all created packages
-            ls -la *.zip *.dmg 2>/dev/null || ls -la *.zip
+        # macOS packages
+        if [ -d "dist/ClaudeWarp.app" ]; then
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
+            ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
           else
-            echo "❌ ClaudeWarp.app not found!"
+            ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
           fi
+          
+          # Create ZIP
+          cd dist && zip -r "../$ZIP_NAME" ClaudeWarp.app && cd ..
+          echo "✅ macOS ZIP package created: $ZIP_NAME"
+          
+          # List all created packages
+          ls -la *.zip *.dmg 2>/dev/null || ls -la *.zip
+        else
+          echo "❌ ClaudeWarp.app not found!"
         fi
     
     - name: Create release packages (Windows)
