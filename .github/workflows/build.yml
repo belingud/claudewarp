@@ -11,6 +11,10 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+  releases: write
+
 env:
   PROJECT_NAME: claudewarp
   PYTHON_VERSION: '3.11'
@@ -114,7 +118,7 @@ jobs:
         Write-Output "Python version: $(uv run python --version)"
         Write-Output "Nuitka version: $(uv run python -m nuitka --version)"
         
-        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --show-progress main.py
+        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe main.py
         
         Write-Output "📁 Renaming output directory..."
         if (Test-Path "main.dist") {
@@ -153,7 +157,6 @@ jobs:
           --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
           --macos-app-name=ClaudeWarp \
           --output-filename=claudewarp \
-          --show-progress \
           main.py
         
         echo "📁 Renaming output app bundle..."
@@ -186,23 +189,35 @@ jobs:
         if [ -d "ClaudeWarp.app" ]; then
           echo "✅ ClaudeWarp.app found, creating DMG..."
           
+          # Create a temporary directory for DMG creation
+          mkdir -p dmg-temp
+          cp -R ClaudeWarp.app dmg-temp/
+          
           create-dmg \
             --volname "ClaudeWarp" \
-            --volicon "ClaudeWarp.app/Contents/Resources/claudewarp.ico" \
             --window-pos 200 120 \
             --window-size 600 300 \
             --icon-size 100 \
             --icon "ClaudeWarp.app" 175 120 \
             --hide-extension "ClaudeWarp.app" \
             --app-drop-link 425 120 \
+            --no-internet-enable \
             "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.dmg" \
-            "ClaudeWarp.app" || echo "❌ DMG creation failed, will use ZIP instead"
+            "dmg-temp" || echo "❌ DMG creation failed, will use ZIP instead"
+          
+          # Clean up temporary directory
+          rm -rf dmg-temp
           
           if [ -f "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.dmg" ]; then
             echo "✅ DMG created successfully"
             ls -la *.dmg
           else
-            echo "⚠️ DMG not found, ZIP package already created"
+            echo "⚠️ DMG creation failed, ZIP package already created"
+            # If DMG creation failed, ensure we have at least the ZIP
+            if [ ! -f "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip" ]; then
+              echo "⚠️ ZIP not found, creating it now..."
+              zip -r "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip" ClaudeWarp.app
+            fi
           fi
         else
           echo "❌ ClaudeWarp.app not found!"

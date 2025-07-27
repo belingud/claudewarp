@@ -30,16 +30,16 @@ def format_proxy_table(
         Table: 格式化的表格
     """
     table = Table(
-        title="代理服务器列表", box=box.ROUNDED, show_header=True, header_style="bold blue"
+        title="代理服务列表", box=box.ROUNDED, show_header=True, header_style="bold blue"
     )
 
     # 添加列
     table.add_column("状态", style="", width=6, justify="center")
-    table.add_column("名称", style="bold", min_width=15)
-    table.add_column("URL", style="dim", min_width=25)
-    table.add_column("描述", style="", min_width=20)
-    table.add_column("标签", style="cyan", min_width=15)
-    table.add_column("更新时间", style="dim", width=19)
+    table.add_column("名称", style="bold")
+    table.add_column("URL", style="dim")
+    table.add_column("描述", style="")
+    table.add_column("标签", style="cyan")
+    table.add_column("更新时间", style="dim")
 
     # 添加行
     for name, proxy in proxies.items():
