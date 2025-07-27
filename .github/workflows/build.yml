@@ -108,118 +108,49 @@ jobs:
         uv sync --all-groups --all-extras
         echo "✅ Dependencies installed successfully"
     
-    - name: Build with Nuitka (Windows)
+    - name: Build with PyInstaller (Windows)
       if: matrix.platform == 'windows'
       shell: pwsh
       run: |
-        Write-Output "🔨 Building Windows application with Nuitka..."
+        Write-Output "🔨 Building Windows application with PyInstaller..."
         Write-Output "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
         Write-Output "Python version: $(uv run python --version)"
-        Write-Output "Nuitka version: $(uv run python -m nuitka --version)"
         
-        # Ensure Nuitka cache directory exists and has permissions
-        $env:NUITKA_CACHE_DIR = "$env:USERPROFILE\.nuitka"
-        if (!(Test-Path $env:NUITKA_CACHE_DIR)) {
-          New-Item -ItemType Directory -Path $env:NUITKA_CACHE_DIR -Force
-          Write-Output "✅ Created Nuitka cache directory"
-        }
-        
-        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --assume-yes-for-downloads --quiet main.py
-        
-        Write-Output "📁 Renaming output directory..."
-        if (Test-Path "main.dist") {
-          Move-Item "main.dist" "claudewarp.dist"
-          Write-Output "✅ Renamed main.dist to claudewarp.dist"
-        } else {
-          Write-Output "❌ main.dist not found!"
-          Get-ChildItem
-        }
-        
-        Write-Output "📋 Build output:"
-        Get-ChildItem claudewarp.*
-        
-        Write-Output "📦 Creating Windows ZIP package..."
-        if (Test-Path "claudewarp.dist") {
-          $zipName = if ($env:GITHUB_REF -like "refs/tags/*") {
-            $version = $env:GITHUB_REF -replace "refs/tags/v?", ""
-            "ClaudeWarp-$version-windows-${{ matrix.arch }}.zip"
-          } else {
-            "ClaudeWarp-windows-${{ matrix.arch }}.zip"
-          }
-          Compress-Archive -Path "claudewarp.dist\*" -DestinationPath $zipName
-          Write-Output "✅ Windows ZIP package created: $zipName"
-          Get-ChildItem *.zip
-        } else {
-          Write-Output "❌ claudewarp.dist not found!"
-        }
+        # Run the Windows build script
+        .\scripts\build_pyinstaller.ps1
     
-    - name: Build with Nuitka (macOS)
+    - name: Build with PyInstaller (macOS)
       if: matrix.platform == 'macos'
       run: |
-        echo "🍎 Building macOS application with Nuitka..."
+        echo "🍎 Building macOS application with PyInstaller..."
         echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
         echo "macOS version: $(sw_vers -productVersion)"
         echo "Architecture: $(uname -m)"
         echo "Python version: $(uv run python --version)"
-        echo "Nuitka version: $(uv run python -m nuitka --version)"
         
-        uv run python -m nuitka --standalone \
-          --macos-create-app-bundle \
-          --enable-plugin=pyside6 \
-          --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
-          --macos-app-name=ClaudeWarp \
-          --output-filename=claudewarp \
-          main.py
-        
-        echo "📁 Renaming output app bundle..."
-        if [ -d "main.app" ]; then
-          mv main.app ClaudeWarp.app
-          echo "✅ Renamed main.app to ClaudeWarp.app"
-        else
-          echo "❌ main.app not found!"
-          ls -la
-        fi
-        
-        echo "📋 Build output:"
-        ls -la ClaudeWarp.app
-        echo "📋 App bundle contents:"
-        ls -la ClaudeWarp.app/Contents/
-        
-        echo "📦 Creating macOS ZIP package..."
-        if [ -d "ClaudeWarp.app" ]; then
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
-            ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
-          else
-            ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
-          fi
-          zip -r "$ZIP_NAME" ClaudeWarp.app
-          echo "✅ macOS ZIP package created: $ZIP_NAME"
-          ls -la *.zip
-        else
-          echo "❌ ClaudeWarp.app not found!"
-        fi
+        # Run the Unix build script
+        bash scripts/build_pyinstaller.sh
     
     - name: Create DMG (macOS)
       if: matrix.platform == 'macos'
       run: |
         echo "💿 Creating DMG package for macOS..."
-        if [ -d "ClaudeWarp.app" ]; then
+        if [ -d "dist/ClaudeWarp.app" ]; then
           echo "✅ ClaudeWarp.app found, creating DMG..."
           
-          # Create a temporary directory for DMG creation
-          mkdir -p dmg-temp
-          cp -R ClaudeWarp.app dmg-temp/
-          
+          # Determine DMG name based on version
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
             DMG_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.dmg"
-            ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
           else
             DMG_NAME="ClaudeWarp-macos-${{ matrix.arch }}.dmg"
-            ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
           fi
           
+          # Create a temporary directory for DMG creation
+          mkdir -p dmg-temp
+          cp -R dist/ClaudeWarp.app dmg-temp/
+          
+          # Create DMG with create-dmg
           create-dmg \
             --volname "ClaudeWarp" \
             --window-pos 200 120 \
@@ -237,19 +168,70 @@ jobs:
           
           if [ -f "$DMG_NAME" ]; then
             echo "✅ DMG created successfully: $DMG_NAME"
-            ls -la *.dmg
+            ls -la "$DMG_NAME"
           else
-            echo "⚠️ DMG creation failed, ZIP package already created"
-            # If DMG creation failed, ensure we have at least the ZIP
-            if [ ! -f "$ZIP_NAME" ]; then
-              echo "⚠️ ZIP not found, creating it now..."
-              zip -r "$ZIP_NAME" ClaudeWarp.app
-            fi
+            echo "⚠️ DMG creation failed, ZIP package will be available"
           fi
         else
           echo "❌ ClaudeWarp.app not found!"
-          ls -la
+          ls -la dist/
         fi
+    
+    - name: Create release packages
+      run: |
+        echo "📦 Creating release packages..."
+        
+        if [[ "${{ matrix.platform }}" == "macos" ]]; then
+          # macOS packages
+          if [ -d "dist/ClaudeWarp.app" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
+              ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
+            else
+              ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
+            fi
+            
+            # Create ZIP
+            cd dist && zip -r "../$ZIP_NAME" ClaudeWarp.app && cd ..
+            echo "✅ macOS ZIP package created: $ZIP_NAME"
+            
+            # List all created packages
+            ls -la *.zip *.dmg 2>/dev/null || ls -la *.zip
+          else
+            echo "❌ ClaudeWarp.app not found!"
+          fi
+        fi
+    
+    - name: Create release packages (Windows)
+      if: matrix.platform == 'windows'
+      shell: pwsh
+      run: |
+        Write-Output "📦 Creating Windows release packages..."
+        
+        # The PowerShell script already created a ZIP, but we need to rename it for versioning
+        if (Test-Path "dist\claudewarp.exe") {
+          if ($env:GITHUB_REF -like "refs/tags/*") {
+            $version = $env:GITHUB_REF -replace "refs/tags/v?", ""
+            $newZipName = "ClaudeWarp-$version-windows-${{ matrix.arch }}.zip"
+          } else {
+            $newZipName = "ClaudeWarp-windows-${{ matrix.arch }}.zip"
+          }
+          
+          # Find the ZIP created by the build script
+          $buildZip = Get-ChildItem -Name "ClaudeWarp-Windows-*.zip" | Select-Object -First 1
+          if ($buildZip) {
+            # Rename to standardized format
+            Move-Item $buildZip $newZipName
+            Write-Output "✅ Windows ZIP package renamed to: $newZipName"
+          } else {
+            # Fallback: create new ZIP if build script didn't create one
+            Compress-Archive -Path "dist\claudewarp.exe" -DestinationPath $newZipName
+            Write-Output "✅ Windows ZIP package created: $newZipName"
+          }
+          Get-ChildItem *.zip
+        } else {
+          Write-Output "❌ claudewarp.exe not found!"
+        }
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -258,10 +240,7 @@ jobs:
         path: |
           *.zip
           *.dmg
-          *.tar.gz
-          *.exe
-          ClaudeWarp.app
-          claudewarp.dist
+          dist/
         retention-days: 30
     
     - name: Debug - List all files (Windows)
@@ -271,7 +250,7 @@ jobs:
         Write-Output "📋 All files in current directory:"
         Get-ChildItem
         Write-Output "📁 Checking for build artifacts:"
-        Get-ChildItem -Recurse -Include "*.zip","*.exe","claudewarp.dist" | Select-Object -First 20
+        Get-ChildItem -Recurse -Include "*.zip","*.exe","dist" | Select-Object -First 20
     
     - name: Debug - List all files (macOS)
       if: matrix.platform == 'macos'
@@ -279,7 +258,7 @@ jobs:
         echo "📋 All files in current directory:"
         ls -la
         echo "📁 Checking for build artifacts:"
-        find . -name "*.zip" -o -name "*.dmg" -o -name "*.exe" -o -name "ClaudeWarp.app" -o -name "claudewarp.dist" | head -20
+        find . -name "*.zip" -o -name "*.dmg" -o -name "dist" | head -20
     
     - name: Get version
       if: startsWith(github.ref, 'refs/tags/')
@@ -320,7 +299,7 @@ jobs:
           
           #### Windows
           1. 下载 `.zip` 压缩包
-          2. 解压到目标目录
+          2. 解压得到 `claudewarp.exe`
           3. 运行 `claudewarp.exe`
           
           ### 变更日志

@@ -223,14 +223,14 @@ uv run pytest
 just format
 
 # 本地构建
-just nuitka
+just pyinstaller
 ```
 
 ### 构建发布版本
 
 ```bash
 # 本地构建
-just nuitka
+just pyinstaller
 
 # 查看构建帮助
 cat BUILD.md

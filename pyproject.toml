@@ -27,13 +27,11 @@ keywords = ["claude", "api", "proxy", "management", "cli", "gui"]
 requires-python = ">=3.8"
 
 dependencies = [
-    "typer>=0.9.0",
-    "pydantic>=2.0.0",
-    "toml>=0.10.2",
-    "rich>=13.0.0",
-    "pyside6>=6.5.0",
-    "pyside6-fluent-widgets>=1.7.6",
-    "colorlog>=6.7.0",
+    "typer>=0.16.0", # 使用标准版本，避免额外依赖
+    "pydantic>=2.0.0,<3.0.0", # 限制版本范围
+    "toml>=0.10.0", # TOML配置文件解析
+    "rich>=13.0.0", # CLI美化输出
+    "colorlog>=6.0.0", # 彩色日志
 ]
 
 [project.scripts]
@@ -45,8 +43,19 @@ Repository = "https://github.com/belingud/claudewarp"
 Issues = "https://github.com/belingud/claudewarp/issues"
 Documentation = "https://github.com/belingud/claudewarp"
 
-[tool.hatch.build.targets.wheel]
+[tool.hatch.build]
 packages = ["claudewarp"]
+exclude = [
+    "claudewarp/gui/**",
+    "tests/**",
+    "scripts/**",
+    "*.md",
+    "*.txt",
+    ".github/**",
+    "Justfile",
+    "BUILD.md",
+]
+include = ["claudewarp/__init__.py", "claudewarp/cli/**", "claudewarp/core/**"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -98,7 +107,7 @@ known_first_party = ["core", "cli", "gui"]
 skip = [".gitignore", ".dockerignore", ".venv", "build", "dist"]
 
 [dependency-groups]
-build = ["imageio>=2.35.1", "nuitka>=2.7.12", "zstandard>=0.23.0"]
+gui = ["pyside6>=6.5.0,<6.8.0", "pyside6-fluent-widgets>=1.7.6,<2.0.0"]
 dev = [
     "pytest>=7.0.0",
     "pytest-qt>=4.2.0",
@@ -106,6 +115,8 @@ dev = [
     "pytest-mock>=3.10.0",
     "pre-commit>=3.0.0",
     "bump2version",
+    "pillow>=10.4.0",
+    "pyinstaller>=6.14.2",
 ]
 
 docs = [

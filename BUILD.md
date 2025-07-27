@@ -1,6 +1,6 @@
 # ClaudeWarp 打包构建指南
 
-本文档介绍如何为 ClaudeWarp 项目创建跨平台安装包。该项目使用 Nuitka 进行打包构建。
+本文档介绍如何为 ClaudeWarp 项目创建跨平台安装包。该项目使用 PyInstaller 进行打包构建。
 
 ## 支持平台
 
@@ -28,7 +28,7 @@ cd claudewarp
 uv sync --all-groups --all-extras
 
 # 构建应用
-just nuitka
+just pyinstaller
 
 # 输出文件在当前目录
 ```
@@ -49,22 +49,20 @@ uv sync --all-groups --all-extras
 
 ```bash
 # 基础构建
-just nuitka
+just pyinstaller
 
-# 手动构建 - GUI 应用程序
-python -m nuitka --standalone \
-    --macos-create-app-bundle \
-    --enable-plugin=pyside6 \
-    --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
-    --macos-app-name=claudewarp \
-    --output-filename=claudewarp \
+# 手动构建 - GUI 应用程序 (macOS)
+pyinstaller --name=ClaudeWarp \
+    --onedir \
+    --windowed \
+    --icon=claudewarp/gui/resources/icons/claudewarp.ico \
     main.py
 
 # Windows 构建
-python -m nuitka --standalone \
-    --enable-plugin=pyside6 \
-    --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico \
-    --output-filename=claudewarp \
+pyinstaller --name=claudewarp \
+    --onefile \
+    --windowed \
+    --icon=claudewarp/gui/resources/icons/claudewarp.ico \
     main.py
 ```
 
@@ -73,12 +71,11 @@ python -m nuitka --standalone \
 构建完成后，会生成：
 
 #### macOS
-- `claudewarp.app` - 应用程序包
-- `claudewarp.dist/` - 依赖文件夹
+- `ClaudeWarp.app` - 应用程序包 (在 dist/ 文件夹中)
+- 可选的 DMG 安装包
 
 #### Windows
-- `claudewarp.exe` - 可执行文件
-- `claudewarp.dist/` - 依赖文件夹
+- `claudewarp.exe` - 可执行文件 (在 dist/ 文件夹中)
 
 ### 4. 代码格式化
 
@@ -110,15 +107,15 @@ git push origin v1.0.0
 # 3. GitHub Actions 自动构建并创建 Release
 ```
 
-## Nuitka 配置说明
+## PyInstaller 配置说明
 
 ### 主要参数
 
-- `--standalone`: 创建独立的应用程序包
-- `--enable-plugin=pyside6`: 启用 PySide6 支持
-- `--macos-create-app-bundle`: 在 macOS 上创建 .app 包
-- `--macos-app-icon`: 设置 macOS 应用图标
-- `--windows-icon-from-ico`: 设置 Windows 应用图标
+- `--onedir`: 创建目录分发（macOS用于.app包）
+- `--onefile`: 创建单文件可执行程序（Windows）
+- `--windowed`: 无控制台窗口的GUI应用
+- `--icon`: 设置应用图标
+- `--hidden-import`: 指定需要包含的隐藏导入
 
 ### 图标配置
 
@@ -166,14 +163,14 @@ chmod +x linuxdeploy-x86_64.AppImage
 
 #### 1. 模块导入错误
 ```bash
-# 解决方案：添加 --include-module 参数
-python -m nuitka --include-module=缺失的模块名 ...
+# 解决方案：添加 --hidden-import 参数
+pyinstaller --hidden-import=缺失的模块名 ...
 ```
 
 #### 2. 资源文件缺失
 ```bash
-# 解决方案：添加 --include-data-dir 参数
-python -m nuitka --include-data-dir=源路径=目标路径 ...
+# 解决方案：添加 --add-data 参数
+pyinstaller --add-data=源路径:目标路径 ...
 ```
 
 #### 3. macOS 权限问题
@@ -192,26 +189,26 @@ sudo spctl --master-disable  # 临时禁用 Gatekeeper
 #### 启用详细输出
 ```bash
 # 添加调试参数
-python -m nuitka --verbose --show-progress ...
+pyinstaller --debug=all --log-level=DEBUG ...
 ```
 
 #### 性能优化
 
 ```bash
-# 启用 LTO 优化
-python -m nuitka --lto=yes ...
+# 启用优化
+pyinstaller --optimize=2 ...
 
 # 减小包大小
-python -m nuitka --remove-output ...
+pyinstaller --exclude-module=不需要的模块 ...
 ```
 
 ## 性能优化
 
 ### 减小包大小
 
-1. **排除不必要的模块**：使用 `--nofollow-import-to=模块名`
+1. **排除不必要的模块**：使用 `--exclude-module=模块名`
 2. **优化图标和资源**：使用压缩后的图像
-3. **启用 LTO**：使用 `--lto=yes`
+3. **启用优化**：使用 `--optimize=2`
 
 ### 提升启动速度
 
@@ -223,7 +220,7 @@ python -m nuitka --remove-output ...
 
 - [ ] 更新版本号 (`pyproject.toml`)
 - [ ] 运行本地测试 (`pytest`)
-- [ ] 本地构建测试 (`just nuitka`)
+- [ ] 本地构建测试 (`just pyinstaller`)
 - [ ] 检查生成的应用是否正常运行
 - [ ] 更新 CHANGELOG.md
 - [ ] 创建 Git 标签
@@ -236,9 +233,9 @@ python -m nuitka --remove-output ...
 
 ### 自定义构建脚本
 
-可以修改 `Justfile` 来：
+可以修改 `scripts/build_pyinstaller.sh` (Unix) 或 `scripts/build_pyinstaller.ps1` (Windows) 来：
 - 添加预处理步骤
-- 集成其他工具（如 NSIS、DMG 创建）
+- 集成其他工具（如 DMG 创建）
 - 添加验证步骤
 
 ### CI/CD 扩展
