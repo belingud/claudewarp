@@ -2,7 +2,6 @@ main.build
 main.dist
 main.app
 
-.claude
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
