@@ -5,7 +5,7 @@ ClaudeWarp - Claude API代理管理工具
 支持CLI和GUI两种模式。
 """
 
-__version__ = "0.0.9"
+__version__ = "0.0.10"
 __author__ = "claudewarp"
 __email__ = "claudewarp@example.com"
 
