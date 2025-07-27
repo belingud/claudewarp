@@ -117,7 +117,14 @@ jobs:
         Write-Output "Python version: $(uv run python --version)"
         Write-Output "Nuitka version: $(uv run python -m nuitka --version)"
         
-        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe main.py
+        # Ensure Nuitka cache directory exists and has permissions
+        $env:NUITKA_CACHE_DIR = "$env:USERPROFILE\.nuitka"
+        if (!(Test-Path $env:NUITKA_CACHE_DIR)) {
+          New-Item -ItemType Directory -Path $env:NUITKA_CACHE_DIR -Force
+          Write-Output "✅ Created Nuitka cache directory"
+        }
+        
+        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --assume-yes-for-downloads --quiet main.py
         
         Write-Output "📁 Renaming output directory..."
         if (Test-Path "main.dist") {
