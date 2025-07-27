@@ -151,7 +151,9 @@ jobs:
           
           # Determine DMG name based on version
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
+            # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
+            VERSION="${GITHUB_REF#refs/tags/}"  # Remove refs/tags/
+            VERSION="${VERSION#v}"              # Remove leading v if present
             DMG_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.dmg"
           else
             DMG_NAME="ClaudeWarp-macos-${{ matrix.arch }}.dmg"
@@ -196,7 +198,9 @@ jobs:
         # macOS packages
         if [ -d "dist/ClaudeWarp.app" ]; then
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION=$(echo "$GITHUB_REF" | sed 's/refs\/tags\/v\?//')
+            # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
+            VERSION="${GITHUB_REF#refs/tags/}"  # Remove refs/tags/
+            VERSION="${VERSION#v}"              # Remove leading v if present
             ZIP_NAME="ClaudeWarp-$VERSION-macos-${{ matrix.arch }}.zip"
           else
             ZIP_NAME="ClaudeWarp-macos-${{ matrix.arch }}.zip"
@@ -279,13 +283,8 @@ jobs:
       id: version-unix
       run: |
         # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
-        if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-          VERSION="${{ github.ref }}"
-          VERSION="${VERSION#refs/tags/v}"
-        else
-          VERSION="${{ github.ref }}"
-          VERSION="${VERSION#refs/tags/}"
-        fi
+        VERSION="${GITHUB_REF#refs/tags/}"  # Remove refs/tags/
+        VERSION="${VERSION#v}"              # Remove leading v if present
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Extracted version: $VERSION"
     
