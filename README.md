@@ -23,7 +23,7 @@
     <img src="https://img.shields.io/badge/Python-3.8%2B-brightgreen" alt="Python Version">
   </a>
   <a href="https://github.com/belingud/claudewarp/actions">
-    <img src="https://img.shields.io/github/workflow/status/belingud/claudewarp/Build%20and%20Release" alt="Build Status">
+    <img src="https://img.shields.io/github/actions/workflow/status/belingud/claudewarp/build.yml?branch=master" alt="Build Status">
   </a>
 </p>
 
