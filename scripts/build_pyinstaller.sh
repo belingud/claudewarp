@@ -113,7 +113,7 @@ COMMON_OPTS=(
 # Combine all options
 ALL_OPTS=("${PYINSTALLER_OPTS[@]}" "${COMMON_OPTS[@]}")
 
-pyinstaller "${ALL_OPTS[@]}" "$MAIN_SCRIPT"
+uv run pyinstaller "${ALL_OPTS[@]}" "$MAIN_SCRIPT"
 
 # Check if build was successful
 if [[ "$OS_TYPE" == "Darwin" ]]; then
