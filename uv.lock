@@ -205,7 +205,7 @@ wheels = [
 
 [[package]]
 name = "claudewarp"
-version = "0.0.17"
+version = "0.0.19"
 source = { editable = "." }
 dependencies = [
     { name = "colorlog" },
