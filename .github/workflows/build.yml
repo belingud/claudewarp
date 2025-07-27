@@ -96,17 +96,28 @@ jobs:
     
     - name: Install system dependencies (Windows)
       if: matrix.platform == 'windows'
+      shell: pwsh
       run: |
-        echo "🪟 Setting up Windows dependencies..."
+        Write-Output "🪟 Setting up Windows dependencies..."
         # Windows特定依赖（如需要）
-        echo "Windows build setup complete"
+        Write-Output "Windows build setup complete"
     
-    - name: Install Python dependencies
+    - name: Install Python dependencies (macOS)
+      if: matrix.platform == 'macos'
       run: |
         echo "📦 Installing Python dependencies with uv..."
         echo "UV version: $(uv --version)"
         uv sync --all-groups --all-extras
         echo "✅ Dependencies installed successfully"
+    
+    - name: Install Python dependencies (Windows)
+      if: matrix.platform == 'windows'
+      shell: pwsh
+      run: |
+        Write-Output "📦 Installing Python dependencies with uv..."
+        Write-Output "UV version: $(uv --version)"
+        uv sync --all-groups --all-extras
+        Write-Output "✅ Dependencies installed successfully"
     
     - name: Build with PyInstaller (Windows)
       if: matrix.platform == 'windows'
@@ -210,7 +221,11 @@ jobs:
         # The PowerShell script already created a ZIP, but we need to rename it for versioning
         if (Test-Path "dist\claudewarp.exe") {
           if ($env:GITHUB_REF -like "refs/tags/*") {
-            $version = $env:GITHUB_REF -replace "refs/tags/v?", ""
+            if ($env:GITHUB_REF -like "refs/tags/v*") {
+              $version = $env:GITHUB_REF -replace "refs/tags/v", ""
+            } else {
+              $version = $env:GITHUB_REF -replace "refs/tags/", ""
+            }
             $newZipName = "ClaudeWarp-$version-windows-${{ matrix.arch }}.zip"
           } else {
             $newZipName = "ClaudeWarp-windows-${{ matrix.arch }}.zip"
@@ -259,9 +274,9 @@ jobs:
         echo "📁 Checking for build artifacts:"
         find . -name "*.zip" -o -name "*.dmg" -o -name "dist" | head -20
     
-    - name: Get version
-      if: startsWith(github.ref, 'refs/tags/')
-      id: version
+    - name: Get version (Unix)
+      if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'macos'
+      id: version-unix
       run: |
         # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
         if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
@@ -274,19 +289,34 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Extracted version: $VERSION"
     
+    - name: Get version (Windows)
+      if: startsWith(github.ref, 'refs/tags/') && matrix.platform == 'windows'
+      id: version-windows
+      shell: pwsh
+      run: |
+        # Extract version from tag (handles both v1.0.0 and 1.0.0 formats)
+        $ref = "${{ github.ref }}"
+        if ($ref -like "refs/tags/v*") {
+          $version = $ref -replace "refs/tags/v", ""
+        } else {
+          $version = $ref -replace "refs/tags/", ""
+        }
+        Write-Output "VERSION=$version" >> $env:GITHUB_OUTPUT
+        Write-Output "Extracted version: $version"
+    
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        name: ClaudeWarp v${{ steps.version.outputs.VERSION }}
+        name: ClaudeWarp v${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}
         body: |
-          ## ClaudeWarp v${{ steps.version.outputs.VERSION }}
+          ## ClaudeWarp v${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}
           
           ### 下载
           
-          - **macOS Intel**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
-          - **macOS Apple Silicon**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
-          - **Windows**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-windows-x64.zip`
+          - **macOS Intel**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
+          - **macOS Apple Silicon**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
+          - **Windows**: `ClaudeWarp-${{ steps.version-unix.outputs.VERSION || steps.version-windows.outputs.VERSION }}-windows-x64.zip`
           
           ### 安装说明
           
