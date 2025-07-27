@@ -216,6 +216,13 @@ class MainWindow(QMainWindow):
         self.proxy_table.setSelectionBehavior(TableWidget.SelectRows)
         self.proxy_table.setSelectionMode(TableWidget.SingleSelection)
         self.proxy_table.setSortingEnabled(True)
+        
+        # 设置统一的表格字体
+        table_font = QFont()
+        table_font.setFamily("")  # 使用系统默认字体族
+        table_font.setPointSize(-1)  # 使用系统默认字体大小
+        table_font.setWeight(QFont.Normal)  # 默认字重
+        self.proxy_table.setFont(table_font)
 
         # 设置列宽
         header = self.proxy_table.horizontalHeader()
@@ -558,8 +565,11 @@ class MainWindow(QMainWindow):
 
                 # 名称
                 name_item = QTableWidgetItem(name)
+                # 当前代理使用粗体，其他使用默认字体
                 if name == current_name:
-                    name_item.setFont(QFont("Arial", 9, QFont.Bold))
+                    font = name_item.font()
+                    font.setWeight(QFont.Bold)
+                    name_item.setFont(font)
                 self.proxy_table.setItem(row, 1, name_item)
 
                 # URL
