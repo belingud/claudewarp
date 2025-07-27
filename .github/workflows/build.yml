@@ -194,13 +194,27 @@ jobs:
             "dmg-temp"; then
             echo "✅ DMG created successfully"
           else
-            echo "❌ DMG creation failed with exit code: $?"
-            echo "🔍 Checking create-dmg installation..."
-            which create-dmg || echo "create-dmg not found in PATH"
-            create-dmg --version || echo "create-dmg version check failed"
-            echo "📁 Contents of dmg-temp directory:"
-            ls -la dmg-temp/ || echo "dmg-temp directory not accessible"
-            echo "⚠️ Will continue with ZIP package only"
+            DMG_EXIT_CODE=$?
+            echo "❌ DMG creation failed with exit code: $DMG_EXIT_CODE"
+            
+            # Check if DMG file was actually created despite the error
+            if [ -f "$DMG_NAME" ]; then
+              echo "✅ DMG file exists despite exit code $DMG_EXIT_CODE - this is likely a cleanup issue"
+              echo "📏 DMG file size: $(ls -lh "$DMG_NAME" | awk '{print $5}')"
+            else
+              echo "🔍 Checking create-dmg installation..."
+              which create-dmg || echo "create-dmg not found in PATH"
+              create-dmg --version || echo "create-dmg version check failed"
+              echo "📁 Contents of dmg-temp directory:"
+              ls -la dmg-temp/ || echo "dmg-temp directory not accessible"
+              echo "⚠️ Will continue with ZIP package only"
+            fi
+            
+            # Try to force unmount any stuck disk images
+            echo "🧹 Attempting to clean up any stuck disk images..."
+            diskutil list | grep "ClaudeWarp" || echo "No ClaudeWarp disk images found"
+            # Force unmount any remaining dmg mounts
+            hdiutil detach /Volumes/dmg.* -force 2>/dev/null || echo "No dmg volumes to detach"
           fi
           
           # Clean up temporary directory
