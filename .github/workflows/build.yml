@@ -90,8 +90,22 @@ jobs:
       if: matrix.platform == 'macos'
       run: |
         echo "🍎 Setting up macOS dependencies..."
-        # macOS特定依赖
+        echo "macOS version: $(sw_vers -productVersion)"
+        echo "Architecture: $(uname -m)"
+        
+        # Update Homebrew first
+        echo "📦 Updating Homebrew..."
+        brew update
+        
+        # Install create-dmg
+        echo "💿 Installing create-dmg..."
         brew install create-dmg
+        
+        # Verify installation
+        echo "✅ Verifying create-dmg installation..."
+        which create-dmg
+        create-dmg --version || echo "create-dmg version check failed (this is normal for some versions)"
+        
         echo "✅ macOS dependencies installed"
     
     - name: Install system dependencies (Windows)
@@ -164,7 +178,10 @@ jobs:
           cp -R dist/ClaudeWarp.app dmg-temp/
           
           # Create DMG with create-dmg
-          create-dmg \
+          echo "🔧 Attempting to create DMG: $DMG_NAME"
+          
+          # Try to create DMG, with detailed error reporting
+          if create-dmg \
             --volname "ClaudeWarp" \
             --window-pos 200 120 \
             --window-size 600 300 \
@@ -174,7 +191,17 @@ jobs:
             --app-drop-link 425 120 \
             --no-internet-enable \
             "$DMG_NAME" \
-            "dmg-temp" || echo "❌ DMG creation failed, will use ZIP instead"
+            "dmg-temp"; then
+            echo "✅ DMG created successfully"
+          else
+            echo "❌ DMG creation failed with exit code: $?"
+            echo "🔍 Checking create-dmg installation..."
+            which create-dmg || echo "create-dmg not found in PATH"
+            create-dmg --version || echo "create-dmg version check failed"
+            echo "📁 Contents of dmg-temp directory:"
+            ls -la dmg-temp/ || echo "dmg-temp directory not accessible"
+            echo "⚠️ Will continue with ZIP package only"
+          fi
           
           # Clean up temporary directory
           rm -rf dmg-temp
