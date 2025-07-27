@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: write
-  releases: write
 
 env:
   PROJECT_NAME: claudewarp
