@@ -107,31 +107,26 @@ jobs:
     
     - name: Build with Nuitka (Windows)
       if: matrix.platform == 'windows'
+      shell: pwsh
       run: |
-        echo "🔨 Building Windows application with Nuitka..."
-        echo "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
-        echo "Python version: $(uv run python --version)"
-        echo "Nuitka version: $(uv run python -m nuitka --version)"
+        Write-Output "🔨 Building Windows application with Nuitka..."
+        Write-Output "Platform: ${{ matrix.platform }}-${{ matrix.arch }}"
+        Write-Output "Python version: $(uv run python --version)"
+        Write-Output "Nuitka version: $(uv run python -m nuitka --version)"
         
-        uv run python -m nuitka --standalone \
-          --enable-plugin=pyside6 \
-          --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico \
-          --output-filename=claudewarp.exe \
-          --verbose \
-          --show-progress \
-          main.py
+        uv run python -m nuitka --standalone --enable-plugin=pyside6 --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --output-filename=claudewarp.exe --verbose --show-progress main.py
         
-        echo "📁 Renaming output directory..."
-        if [ -d "main.dist" ]; then
-          mv main.dist claudewarp.dist
-          echo "✅ Renamed main.dist to claudewarp.dist"
-        else
-          echo "❌ main.dist not found!"
-          ls -la
-        fi
+        Write-Output "📁 Renaming output directory..."
+        if (Test-Path "main.dist") {
+          Move-Item "main.dist" "claudewarp.dist"
+          Write-Output "✅ Renamed main.dist to claudewarp.dist"
+        } else {
+          Write-Output "❌ main.dist not found!"
+          Get-ChildItem
+        }
         
-        echo "📋 Build output:"
-        ls -la claudewarp.*
+        Write-Output "📋 Build output:"
+        Get-ChildItem claudewarp.*
     
     - name: Build with Nuitka (macOS)
       if: matrix.platform == 'macos'
