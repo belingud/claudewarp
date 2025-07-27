@@ -4,11 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
   workflow_dispatch:
 
 permissions:
@@ -125,7 +120,7 @@ jobs:
         # Update package list
         sudo apt-get update
         
-        # Install GUI dependencies for PySide6
+        # Install GUI dependencies for PySide6 (updated for Ubuntu 24.04)
         echo "📦 Installing Qt and GUI dependencies..."
         sudo apt-get install -y \
           libqt6gui6 \
@@ -134,13 +129,19 @@ jobs:
           qt6-base-dev \
           libxcb-xinerama0 \
           libxcb-cursor0 \
-          libgl1-mesa-glx \
-          libegl1-mesa \
+          libgl1-mesa-dev \
+          libegl1 \
           libfontconfig1 \
           libglib2.0-0 \
           libgtk-3-0 \
           libx11-xcb1 \
-          libxkbcommon-x11-0
+          libxkbcommon-x11-0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-shape0
         
         # Install AppImage tools for packaging
         echo "📦 Installing AppImage tools..."
