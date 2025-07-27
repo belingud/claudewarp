@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ClaudeWarp
+Comment=Claude API proxy server manager
+Exec=claudewarp
+Icon=claudewarp
+Categories=Development;Network;
+Terminal=false
