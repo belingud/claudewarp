@@ -39,6 +39,8 @@
 ✅ **数据验证** - 使用 Pydantic 确保配置数据的完整性和正确性  
 🎨 **美观界面** - 基于 PySide6 的现代化 GUI 界面  
 
+![screenshot](artwork/screenshot.png)
+
 ## 📦 安装方式
 
 ### 从发布版本安装（推荐）

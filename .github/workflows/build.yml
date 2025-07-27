@@ -127,6 +127,15 @@ jobs:
         
         Write-Output "📋 Build output:"
         Get-ChildItem claudewarp.*
+        
+        Write-Output "📦 Creating Windows ZIP package..."
+        if (Test-Path "claudewarp.dist") {
+          Compress-Archive -Path "claudewarp.dist\*" -DestinationPath "ClaudeWarp-${{ github.ref_name }}-windows-${{ matrix.arch }}.zip"
+          Write-Output "✅ Windows ZIP package created"
+          Get-ChildItem *.zip
+        } else {
+          Write-Output "❌ claudewarp.dist not found!"
+        }
     
     - name: Build with Nuitka (macOS)
       if: matrix.platform == 'macos'
@@ -160,6 +169,15 @@ jobs:
         ls -la ClaudeWarp.app
         echo "📋 App bundle contents:"
         ls -la ClaudeWarp.app/Contents/
+        
+        echo "📦 Creating macOS ZIP package..."
+        if [ -d "ClaudeWarp.app" ]; then
+          zip -r "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip" ClaudeWarp.app
+          echo "✅ macOS ZIP package created"
+          ls -la *.zip
+        else
+          echo "❌ ClaudeWarp.app not found!"
+        fi
     
     - name: Create DMG (macOS)
       if: matrix.platform == 'macos'
@@ -184,8 +202,7 @@ jobs:
             echo "✅ DMG created successfully"
             ls -la *.dmg
           else
-            echo "⚠️ DMG not found, creating ZIP fallback..."
-            zip -r "ClaudeWarp-${{ github.ref_name }}-macos-${{ matrix.arch }}.zip" ClaudeWarp.app
+            echo "⚠️ DMG not found, ZIP package already created"
           fi
         else
           echo "❌ ClaudeWarp.app not found!"
@@ -228,9 +245,9 @@ jobs:
           
           ### 下载
           
-          - **macOS Intel**: `claudewarp-${{ steps.version.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
-          - **macOS Apple Silicon**: `claudewarp-${{ steps.version.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
-          - **Windows**: `claudewarp-${{ steps.version.outputs.VERSION }}-windows-x64.zip`
+          - **macOS Intel**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-macos-x64.zip` 或 `.dmg`
+          - **macOS Apple Silicon**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-macos-arm64.zip` 或 `.dmg`
+          - **Windows**: `ClaudeWarp-${{ steps.version.outputs.VERSION }}-windows-x64.zip`
           
           ### 安装说明
           
@@ -251,12 +268,9 @@ jobs:
         files: |
           *.zip
           *.dmg
-          *.tar.gz
-          *.exe
         draft: false
         prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     needs: [build]
