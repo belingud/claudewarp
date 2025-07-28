@@ -209,9 +209,23 @@ jobs:
             ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
             
             # Upload all assets from all platforms
-            let assets = (ls *.zip *.dmg *.AppImage | get name | str join " ")
-            if ($assets | str length) > 0 {
-              ^gh release upload $"v($version)" $assets
+            let asset_patterns = ["*.zip", "*.dmg", "*.AppImage"]
+            let mut assets = []
+            for pattern in $asset_patterns {
+              if ($pattern | path exists) {
+                assets = ($assets | append $pattern)
+              } else {
+                try {
+                  let files = (ls $pattern | get name)
+                  assets = ($assets | append $files)
+                } catch {
+                  print $"⚠️ No files matching pattern: ($pattern)"
+                }
+              }
+            }
+            let assets_str = ($assets | str join " ")
+            if ($assets_str | str length) > 0 {
+              ^gh release upload $"v($version)" $assets_str
             }
           }
         env:
