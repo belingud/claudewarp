@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
                 if name == current_name:
                     status_item.setForeground(Qt.GlobalColor.darkGreen)
                 elif proxy.is_active:
-                    status_item.setForeground(Qt.GlobalColor.blue)
+                    status_item.setForeground(Qt.GlobalColor.darkBlue)
                 else:
                     status_item.setForeground(Qt.GlobalColor.gray)
 
