@@ -224,15 +224,24 @@ jobs:
           
           # Find and upload all build artifacts
           cd artifacts
-          let asset_files = (ls **/*.{zip,dmg,AppImage} | get name)
-          if ($asset_files | length) > 0 {
-            print $"Found ($asset_files | length) assets to upload"
-            for file in $asset_files {
+          print "📁 Checking artifacts directory structure:"
+          ^ls -la
+          
+          # Use bash find command to locate all asset files
+          let all_assets = (^find . -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" | lines)
+          
+          if ($all_assets | length) > 0 {
+            print $"Found ($all_assets | length) assets to upload:"
+            $all_assets | each { |file| print $"  - ($file)" }
+            
+            for file in $all_assets {
               print $"Uploading: ($file)"
               ^gh release upload $"v($version)" $file
             }
           } else {
             print "⚠️ No assets found to upload"
+            print "Directory contents:"
+            ^find . -type f | ^head -20
           }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
