@@ -278,18 +278,18 @@ class MainWindow(QMainWindow):
         button_layout = QHBoxLayout()
 
         # 创建按钮
-        self.add_btn = PrimaryPushButton("添加")
-        self.add_btn.setIcon(FluentIcon.ADD)
+        self.add_btn = PrimaryPushButton("➕")
+        # self.add_btn.setIcon(FluentIcon.ADD)
         self.edit_btn = PushButton("编辑")
-        self.edit_btn.setIcon(FluentIcon.EDIT)
+        # self.edit_btn.setIcon(FluentIcon.EDIT)
         self.remove_btn = PushButton("删除")
-        self.remove_btn.setIcon(FluentIcon.DELETE)
+        # self.remove_btn.setIcon(FluentIcon.DELETE)
         self.switch_btn = PrimaryPushButton("切换")
-        self.switch_btn.setIcon(FluentIcon.SYNC)
-        self.toggle_btn = PushButton("启/禁用")
-        self.toggle_btn.setIcon(FluentIcon.POWER_BUTTON)
-        self.refresh_btn = PushButton()
-        self.refresh_btn.setIcon(FluentIcon.SYNC)
+        # self.switch_btn.setIcon(FluentIcon.SYNC)
+        self.toggle_btn = PushButton("启用/禁用")
+        # self.toggle_btn.setIcon(FluentIcon.POWER_BUTTON)
+        self.refresh_btn = PushButton("刷新")
+        # self.refresh_btn.setIcon(FluentIcon.SYNC)
         self.theme_toggle_btn = PushButton("🌓")  # 使用月亮图标表示主题切换
         self.theme_toggle_btn.setIcon(FluentIcon.BRIGHTNESS)
 
