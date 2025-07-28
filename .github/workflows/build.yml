@@ -208,24 +208,11 @@ jobs:
           if "${{ matrix.platform }}" == "macos" and "${{ matrix.arch }}" == "arm64" {
             ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
             
-            # Upload all assets from all platforms
-            let asset_patterns = ["*.zip", "*.dmg", "*.AppImage"]
-            let mut assets = []
-            for pattern in $asset_patterns {
-              if ($pattern | path exists) {
-                assets = ($assets | append $pattern)
-              } else {
-                try {
-                  let files = (ls $pattern | get name)
-                  assets = ($assets | append $files)
-                } catch {
-                  print $"⚠️ No files matching pattern: ($pattern)"
-                }
-              }
-            }
-            let assets_str = ($assets | str join " ")
-            if ($assets_str | str length) > 0 {
-              ^gh release upload $"v($version)" $assets_str
+            # Upload available assets from current platform only
+            let available_files = (ls | where name =~ '\.(zip|dmg|AppImage)$' | get name)
+            if ($available_files | length) > 0 {
+              let assets = ($available_files | str join " ")
+              ^gh release upload $"v($version)" $assets
             }
           }
         env:
