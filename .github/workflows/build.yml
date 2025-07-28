@@ -219,7 +219,11 @@ jobs:
           print $"Creating release for version ($version)"
 
           # Create release with GitHub CLI
-          let release_body = (open .github/templates/github/release_notes.md | str replace '{VERSION}' $version)
+          let release_body = if (".github/templates/github/release_notes.md" | path exists) {
+            open .github/templates/github/release_notes.md | str replace '{VERSION}' $version
+          } else {
+            $"ClaudeWarp v($version)\n\nAutomated release build.\n\nSee CHANGELOG.md for details."
+          }
           ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
           
           # Find and upload all build artifacts
@@ -229,7 +233,7 @@ jobs:
           
           # Use bash find command to locate only top-level package files
           # This avoids uploading internal files like base_library.zip that cause "asset under the same name already exists" errors
-          let all_assets = (^find . -type f \( -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" \) -not -path "*/dist/*" -not -path "*/build/*" | lines)
+          let all_assets = (^find . -maxdepth 2 -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" | ^grep -v "/dist/" | ^grep -v "/build/" | lines)
           
           if ($all_assets | length) > 0 {
             print $"Found ($all_assets | length) assets to upload:"
