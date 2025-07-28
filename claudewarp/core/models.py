@@ -31,6 +31,8 @@ class ProxyServer(BaseModel):
         default_factory=lambda: datetime.now().isoformat(), description="最后更新时间，ISO格式"
     )
     is_active: bool = Field(default=True, description="是否启用该代理服务器")
+    bigmodel: Optional[str] = Field(default=None, description="大模型名称")
+    smallmodel: Optional[str] = Field(default=None, description="小模型名称")
 
     @validator("name")
     def validate_name(cls, v: str) -> str:

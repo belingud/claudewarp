@@ -79,6 +79,8 @@ def _update_proxy_with_rename(
         "description": update_kwargs.get("description", old_proxy.description),
         "tags": update_kwargs.get("tags", old_proxy.tags),
         "is_active": update_kwargs.get("is_active", old_proxy.is_active),
+        "bigmodel": update_kwargs.get("bigmodel", old_proxy.bigmodel),
+        "smallmodel": update_kwargs.get("smallmodel", old_proxy.smallmodel),
     }
 
     # 删除旧代理
@@ -92,6 +94,8 @@ def _update_proxy_with_rename(
         description=proxy_data["description"],
         tags=proxy_data["tags"],
         is_active=proxy_data["is_active"],
+        bigmodel=proxy_data["bigmodel"],
+        smallmodel=proxy_data["smallmodel"],
     )
 
     # 如果原代理是当前代理，切换到新名称
@@ -106,6 +110,8 @@ def add(
     key: Optional[str] = typer.Option(None, "--key", "-k", help="API密钥"),
     description: Optional[str] = typer.Option("", "--desc", "-d", help="描述信息"),
     tags: Optional[str] = typer.Option(None, "--tags", "-t", help="标签列表，用逗号分隔"),
+    bigmodel: Optional[str] = typer.Option(None, "--bigmodel", help="大模型名称"),
+    smallmodel: Optional[str] = typer.Option(None, "--smallmodel", help="小模型名称"),
     interactive: bool = typer.Option(True, "--interactive/--no-interactive", help="交互式输入"),
 ):
     """添加新的代理服务器"""
@@ -139,6 +145,12 @@ def add(
                 )
             else:
                 tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
+
+            if bigmodel is None:
+                bigmodel = typer.prompt("大模型名称 (可选)", default="") or None
+
+            if smallmodel is None:
+                smallmodel = typer.prompt("小模型名称 (可选)", default="") or None
         else:
             # 非交互式模式，检查必需参数
             if not name:
@@ -155,7 +167,13 @@ def add(
 
         # 创建代理对象
         proxy = ProxyServer(
-            name=name, base_url=url, api_key=key, description=description, tags=tags_list
+            name=name,
+            base_url=url,
+            api_key=key,
+            description=description,
+            tags=tags_list,
+            bigmodel=bigmodel,
+            smallmodel=smallmodel,
         )
 
         # 添加代理
@@ -167,6 +185,8 @@ def add(
             description=proxy.description,
             tags=proxy.tags,
             is_active=proxy.is_active,
+            bigmodel=proxy.bigmodel,
+            smallmodel=proxy.smallmodel,
         )
 
         console.print(format_success(f"代理 '{name}' 添加成功"))
@@ -459,6 +479,8 @@ def edit(
     key: Optional[str] = typer.Option(None, "--key", help="新的API密钥"),
     description: Optional[str] = typer.Option(None, "--desc", help="新的描述"),
     tags: Optional[str] = typer.Option(None, "--tags", help="新的标签列表，用逗号分隔"),
+    bigmodel: Optional[str] = typer.Option(None, "--bigmodel", help="新的大模型名称"),
+    smallmodel: Optional[str] = typer.Option(None, "--smallmodel", help="新的小模型名称"),
     enable: Optional[bool] = typer.Option(None, "--enable/--disable", help="启用/禁用代理"),
     interactive: bool = typer.Option(False, "--interactive", "-i", help="交互式编辑"),
 ):
@@ -486,6 +508,12 @@ def edit(
                 "标签 (用逗号分隔)", default=",".join(proxy.tags), console=console
             )
             tags_list = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
+            bigmodel = (
+                Prompt.ask("大模型名称", default=proxy.bigmodel or "", console=console) or None
+            )
+            smallmodel = (
+                Prompt.ask("小模型名称", default=proxy.smallmodel or "", console=console) or None
+            )
             enable = Confirm.ask("启用代理", default=proxy.is_active, console=console)
         else:
             # 构建更新参数
@@ -500,6 +528,10 @@ def edit(
             if tags is not None:
                 tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()]
                 update_kwargs["tags"] = tags_list
+            if bigmodel is not None:
+                update_kwargs["bigmodel"] = bigmodel or None
+            if smallmodel is not None:
+                update_kwargs["smallmodel"] = smallmodel or None
             if enable is not None:
                 update_kwargs["is_active"] = enable
 
@@ -533,6 +565,8 @@ def edit(
             "description": description,
             "tags": tags_list,
             "is_active": enable,
+            "bigmodel": bigmodel,
+            "smallmodel": smallmodel,
         }
 
         # 检查是否需要重命名

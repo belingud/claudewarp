@@ -7,11 +7,14 @@ GUI主窗口实现
 import logging
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
     QHBoxLayout,
     QHeaderView,
     QMainWindow,
@@ -40,6 +43,7 @@ from qfluentwidgets import (
     TitleLabel,
 )
 
+from claudewarp.cli.formatters import _format_datetime, _mask_api_key
 from claudewarp.core.manager import ProxyManager
 from claudewarp.core.models import ExportFormat, ProxyServer
 from claudewarp.gui.dialogs import (
@@ -49,6 +53,7 @@ from claudewarp.gui.dialogs import (
     EditProxyDialog,
     ExportDialog,
 )
+from claudewarp.gui.theme_manager import get_theme_manager
 
 
 class MainWindow(QMainWindow):
@@ -68,6 +73,9 @@ class MainWindow(QMainWindow):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("初始化主窗口")
 
+        # 设置窗口图标
+        self.set_window_icon()
+
         # 初始化代理管理器
         try:
             self.logger.debug("初始化代理管理器")
@@ -75,13 +83,20 @@ class MainWindow(QMainWindow):
             self.logger.info("代理管理器初始化成功")
         except Exception as e:
             self.logger.error(f"初始化代理管理器失败: {e}")
-            QMessageBox.critical(None, "初始化失败", f"无法初始化代理管理器:\n{e}")
+            QMessageBox.critical(self, "初始化失败", f"无法初始化代理管理器:\n{e}")
             sys.exit(1)
+
+        # 初始化主题管理器
+        self.logger.debug("初始化主题管理器")
+        self.theme_manager = get_theme_manager()
+        self.theme_manager.theme_changed.connect(self.on_theme_changed)
+
+        # 应用暗色模式样式表
+        # self.apply_dark_mode_stylesheet()  # 注释掉，使用主题管理器
 
         # 初始化UI
         self.logger.debug("设置用户界面")
         self.setup_ui()
-        self.setup_menu_bar()
         self.setup_status_bar()
         self.setup_connections()
 
@@ -97,6 +112,20 @@ class MainWindow(QMainWindow):
 
         self.logger.info("主窗口初始化完成")
 
+    def set_window_icon(self):
+        """设置窗口图标"""
+        try:
+            # 获取图标文件路径
+            icon_path = Path(__file__).parent / "resources" / "icons" / "claudewarp.ico"
+            if icon_path.exists():
+                icon = QIcon(str(icon_path))
+                self.setWindowIcon(icon)
+                self.logger.debug(f"设置窗口图标: {icon_path}")
+            else:
+                self.logger.warning(f"图标文件不存在: {icon_path}")
+        except Exception as e:
+            self.logger.error(f"设置窗口图标失败: {e}")
+
     def setup_ui(self):
         """设置用户界面"""
         self.setWindowTitle("Claude Proxy Manager")
@@ -111,7 +140,7 @@ class MainWindow(QMainWindow):
         main_layout = QHBoxLayout(central_widget)
 
         # 创建分割器
-        splitter = QSplitter(Qt.Horizontal)
+        splitter = QSplitter(Qt.Orientation.Horizontal)
         main_layout.addWidget(splitter)
 
         # 左侧：代理列表和操作区域
@@ -213,24 +242,24 @@ class MainWindow(QMainWindow):
 
         # 设置表格属性
         self.proxy_table.setAlternatingRowColors(True)
-        self.proxy_table.setSelectionBehavior(TableWidget.SelectRows)
-        self.proxy_table.setSelectionMode(TableWidget.SingleSelection)
+        self.proxy_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.proxy_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.proxy_table.setSortingEnabled(True)
-        
+
         # 设置统一的表格字体
         table_font = QFont()
         table_font.setFamily("")  # 使用系统默认字体族
         table_font.setPointSize(-1)  # 使用系统默认字体大小
-        table_font.setWeight(QFont.Normal)  # 默认字重
+        table_font.setWeight(QFont.Weight.Normal)  # 默认字重
         self.proxy_table.setFont(table_font)
 
         # 设置列宽
         header = self.proxy_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # 状态
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # 名称
-        header.setSectionResizeMode(2, QHeaderView.Stretch)  # URL
-        header.setSectionResizeMode(3, QHeaderView.Stretch)  # 描述
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # 时间
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)  # 状态
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # 名称
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # URL
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)  # 描述
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)  # 时间
 
         layout.addWidget(self.proxy_table)
 
@@ -257,10 +286,12 @@ class MainWindow(QMainWindow):
         self.remove_btn.setIcon(FluentIcon.DELETE)
         self.switch_btn = PrimaryPushButton("切换")
         self.switch_btn.setIcon(FluentIcon.SYNC)
-        self.toggle_btn = PushButton("启用/禁用")
+        self.toggle_btn = PushButton("启/禁用")
         self.toggle_btn.setIcon(FluentIcon.POWER_BUTTON)
-        self.refresh_btn = PushButton("刷新")
+        self.refresh_btn = PushButton()
         self.refresh_btn.setIcon(FluentIcon.SYNC)
+        self.theme_toggle_btn = PushButton("🌓")  # 使用月亮图标表示主题切换
+        self.theme_toggle_btn.setIcon(FluentIcon.BRIGHTNESS)
 
         # 设置按钮提示文本
         self.add_btn.setToolTip("添加新的代理")
@@ -269,6 +300,7 @@ class MainWindow(QMainWindow):
         self.switch_btn.setToolTip("切换到选中的代理")
         self.toggle_btn.setToolTip("切换启用状态")
         self.refresh_btn.setToolTip("刷新代理列表")
+        self.theme_toggle_btn.setToolTip("切换主题 (浅色/深色)")
 
         # 添加按钮到布局
         button_layout.addWidget(self.add_btn)
@@ -278,6 +310,7 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.toggle_btn)
         button_layout.addStretch()
         button_layout.addWidget(self.refresh_btn)
+        button_layout.addWidget(self.theme_toggle_btn)
 
         layout.addLayout(button_layout)
 
@@ -382,53 +415,6 @@ class MainWindow(QMainWindow):
 
         return group
 
-    def setup_menu_bar(self):
-        """设置菜单栏"""
-        menubar = self.menuBar()
-
-        # 文件菜单
-        file_menu = menubar.addMenu("文件(&F)")
-
-        # 添加代理
-        add_action = QAction("添加代理(&A)", self)
-        add_action.setShortcut("Ctrl+N")
-        add_action.triggered.connect(self.add_proxy)
-        file_menu.addAction(add_action)
-
-        file_menu.addSeparator()
-
-        # 导入/导出
-        import_action = QAction("导入配置(&I)", self)
-        import_action.triggered.connect(self.import_config)
-        file_menu.addAction(import_action)
-
-        export_config_action = QAction("导出配置(&E)", self)
-        export_config_action.triggered.connect(self.export_config)
-        file_menu.addAction(export_config_action)
-
-        file_menu.addSeparator()
-
-        # 退出
-        exit_action = QAction("退出(&X)", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-
-        # 编辑菜单
-        edit_menu = menubar.addMenu("编辑(&E)")
-
-        refresh_action = QAction("刷新(&R)", self)
-        refresh_action.setShortcut("F5")
-        refresh_action.triggered.connect(self.refresh_data)
-        edit_menu.addAction(refresh_action)
-
-        # 帮助菜单
-        help_menu = menubar.addMenu("帮助(&H)")
-
-        about_action = QAction("关于(&A)", self)
-        about_action.triggered.connect(self.show_about)
-        help_menu.addAction(about_action)
-
     def setup_status_bar(self):
         """设置状态栏"""
         self.status_bar = QStatusBar()
@@ -465,6 +451,7 @@ class MainWindow(QMainWindow):
         self.switch_btn.clicked.connect(self.switch_proxy)
         self.toggle_btn.clicked.connect(self.toggle_proxy_status)
         self.refresh_btn.clicked.connect(self.refresh_data)
+        self.theme_toggle_btn.clicked.connect(self.toggle_theme)
 
         # 导出按钮
         self.export_bash_btn.clicked.connect(lambda: self.export_environment("bash"))
@@ -555,11 +542,11 @@ class MainWindow(QMainWindow):
 
                 status_item = QTableWidgetItem(status_text)
                 if name == current_name:
-                    status_item.setForeground(Qt.darkGreen)
+                    status_item.setForeground(Qt.GlobalColor.darkGreen)
                 elif proxy.is_active:
-                    status_item.setForeground(Qt.blue)
+                    status_item.setForeground(Qt.GlobalColor.blue)
                 else:
-                    status_item.setForeground(Qt.gray)
+                    status_item.setForeground(Qt.GlobalColor.gray)
 
                 self.proxy_table.setItem(row, 0, status_item)
 
@@ -568,7 +555,7 @@ class MainWindow(QMainWindow):
                 # 当前代理使用粗体，其他使用默认字体
                 if name == current_name:
                     font = name_item.font()
-                    font.setWeight(QFont.Bold)
+                    font.setWeight(QFont.Weight.Bold)
                     name_item.setFont(font)
                 self.proxy_table.setItem(row, 1, name_item)
 
@@ -643,6 +630,8 @@ class MainWindow(QMainWindow):
 <b>状态:</b> {"启用" if current_proxy.is_active else "禁用"}<br>
 <b>描述:</b> {current_proxy.description or "无"}<br>
 <b>标签:</b> {", ".join(current_proxy.tags) if current_proxy.tags else "无"}<br>
+<b>大模型:</b> {current_proxy.bigmodel or "未配置"}<br>
+<b>小模型:</b> {current_proxy.smallmodel or "未配置"}<br>
 <b>创建时间:</b> {self.format_datetime(current_proxy.created_at)}<br>
 <b>更新时间:</b> {self.format_datetime(current_proxy.updated_at)}
                 """.strip()
@@ -693,6 +682,48 @@ class MainWindow(QMainWindow):
         except Exception:
             return iso_string
 
+    def update_proxy_info_display(self, proxy: ProxyServer):
+        """更新代理信息显示
+
+        Args:
+            proxy: 代理服务器对象
+        """
+        # 构建信息文本
+        info_lines = [
+            f"名称: {proxy.name}",
+            f"URL: {proxy.base_url}",
+            f"状态: {'启用' if proxy.is_active else '禁用'}",
+        ]
+
+        if proxy.description:
+            info_lines.append(f"描述: {proxy.description}")
+
+        if proxy.tags:
+            info_lines.append(f"标签: {', '.join(proxy.tags)}")
+
+        # 添加模型信息
+        if proxy.bigmodel:
+            info_lines.append(f"大模型: {proxy.bigmodel}")
+        else:
+            info_lines.append("大模型: 未配置")
+
+        if proxy.smallmodel:
+            info_lines.append(f"小模型: {proxy.smallmodel}")
+        else:
+            info_lines.append("小模型: 未配置")
+
+        # 添加详细信息
+        info_lines.extend(
+            [
+                f"API密钥: {_mask_api_key(proxy.api_key)}",
+                f"创建时间: {_format_datetime(proxy.created_at)}",
+                f"更新时间: {_format_datetime(proxy.updated_at)}",
+            ]
+        )
+
+        # 更新文本显示
+        self.proxy_info_text.setPlainText("\n".join(info_lines))
+
     # 槽函数实现继续在下一部分...
 
     def on_selection_changed(self):
@@ -734,7 +765,7 @@ class MainWindow(QMainWindow):
         """添加代理"""
         self.logger.info("开始添加新代理")
         dialog = AddProxyDialog(self)
-        if dialog.exec() == AddProxyDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             proxy_data = dialog.get_proxy_data()
             self.logger.debug(f"获取代理数据: {proxy_data['name']}")
             try:
@@ -745,6 +776,8 @@ class MainWindow(QMainWindow):
                     api_key=proxy_data["api_key"],
                     description=proxy_data.get("description", ""),
                     tags=proxy_data.get("tags", []),
+                    bigmodel=proxy_data.get("bigmodel"),
+                    smallmodel=proxy_data.get("smallmodel"),
                     is_active=proxy_data.get("is_active", True),
                     set_as_current=proxy_data.get("set_as_current", False),
                 )
@@ -767,7 +800,7 @@ class MainWindow(QMainWindow):
         try:
             proxy = self.proxy_manager.get_proxy(proxy_name)
             dialog = EditProxyDialog(proxy, self)
-            if dialog.exec() == EditProxyDialog.Accepted:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 update_data = dialog.get_update_data()
                 new_name = update_data.pop("name", proxy_name)
 
@@ -786,6 +819,8 @@ class MainWindow(QMainWindow):
                         api_key=update_data["api_key"],
                         description=update_data["description"],
                         tags=update_data["tags"],
+                        bigmodel=update_data["bigmodel"],
+                        smallmodel=update_data["smallmodel"],
                         is_active=update_data["is_active"],
                     )
                     # 如果原代理是当前代理，切换到新名称
@@ -848,6 +883,36 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.show_error(f"切换代理状态失败: {e}")
 
+    def toggle_theme(self):
+        """切换主题按钮响应函数"""
+        try:
+            self.logger.info("用户点击主题切换按钮")
+            self.theme_manager.toggle_theme()
+
+            # 更新按钮文本和图标
+            self.update_theme_button()
+
+        except Exception as e:
+            self.logger.error(f"切换主题失败: {e}")
+            self.show_error(f"切换主题失败: {e}")
+
+    def update_theme_button(self):
+        """更新主题切换按钮的显示"""
+        try:
+            current_theme = self.theme_manager.get_current_theme()
+            if current_theme is None:
+                # 如果还没有设置主题，使用默认显示
+                self.theme_toggle_btn.setText("🌓")
+                self.theme_toggle_btn.setToolTip("切换主题 (浅色/深色)")
+            elif current_theme == "dark":
+                self.theme_toggle_btn.setText("🌙")  # 深色主题显示月亮
+                self.theme_toggle_btn.setToolTip("切换到浅色主题")
+            else:
+                self.theme_toggle_btn.setText("☀️")  # 浅色主题显示太阳
+                self.theme_toggle_btn.setToolTip("切换到深色主题")
+        except Exception as e:
+            self.logger.error(f"更新主题按钮失败: {e}")
+
     # 导出功能
     def export_environment(self, shell_type: str):
         """导出环境变量"""
@@ -862,7 +927,7 @@ class MainWindow(QMainWindow):
     def show_export_dialog(self):
         """显示自定义导出对话框"""
         dialog = ExportDialog(self)
-        if dialog.exec() == ExportDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             export_format = dialog.get_export_format()
             try:
                 content = self.proxy_manager.export_environment(export_format)
@@ -958,6 +1023,87 @@ class MainWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def on_theme_changed(self, theme_name: str):
+        """主题变化处理器
+
+        Args:
+            theme_name: 新主题名称 ('light' 或 'dark')
+        """
+        self.logger.info(f"主题已切换到: {theme_name}")
+
+        # 更新主题菜单状态
+        self.update_theme_menu()
+
+        # 更新主题按钮状态
+        self.update_theme_button()
+
+        # 更新状态栏
+        theme_display = "浅色" if theme_name == "light" else "深色"
+        self.status_label.setText(f"主题已切换到: {theme_display}")
+
+        # 可以在这里添加其他主题变化时需要执行的逻辑
+        # 比如更新图标、颜色等
+
+    def update_theme_menu(self):
+        """更新主题菜单的选中状态"""
+        try:
+            current_mode = self.theme_manager.get_theme_mode()
+
+            # 更新菜单项的选中状态
+            # for mode, action in self.theme_actions.items():
+            #     action.setChecked(mode == current_mode)
+
+            self.logger.debug(f"主题菜单状态已更新: {current_mode.value}")
+
+        except Exception as e:
+            self.logger.error(f"更新主题菜单状态失败: {e}")
+
+    def get_dark_mode_stylesheet(self) -> str:
+        """获取暗色模式的样式表"""
+        return """
+            QMainWindow {
+                background-color: #333;
+                color: white;
+            }
+            QWidget {
+                background-color: #444;
+                color: white;
+            }
+            QTableWidget {
+                background-color: #555;
+                color: white;
+                selection-background-color: #666;
+                selection-color: white;
+            }
+            QHeaderView::section {
+                background-color: #444;
+                color: white;
+            }
+            QPushButton {
+                background-color: #555;
+                color: white;
+                border: 1px solid #777;
+            }
+            QPushButton:hover {
+                background-color: #666;
+            }
+            QLineEdit, QTextEdit {
+                background-color: #555;
+                color: white;
+                border: 1px solid #777;
+            }
+            QLabel {
+                color: white;
+            }
+            /* 其他需要调整样式的组件 */
+        """
+
+    def apply_dark_mode_stylesheet(self):
+        """应用暗色模式样式表"""
+        stylesheet = self.get_dark_mode_stylesheet()
+        self.setStyleSheet(stylesheet)
+        self.logger.info("已应用暗色模式样式表")
 
 
 # 导出主窗口类

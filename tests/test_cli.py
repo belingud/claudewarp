@@ -202,7 +202,9 @@ class TestListCommand:
 
     def test_list_command_with_proxies(self, runner, mock_manager_with_proxy):
         """测试列出代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["list"])
 
             assert result.exit_code == 0
@@ -223,7 +225,9 @@ class TestListCommand:
 
     def test_list_command_json_format(self, runner, mock_manager_with_proxy):
         """测试JSON格式输出"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["list", "--format", "json"])
 
             assert result.exit_code == 0
@@ -232,7 +236,9 @@ class TestListCommand:
 
     def test_list_command_simple_format(self, runner, mock_manager_with_proxy):
         """测试简单格式输出"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["list", "--format", "simple"])
 
             assert result.exit_code == 0
@@ -256,7 +262,9 @@ class TestUseCommand:
 
     def test_use_command_success(self, runner, mock_manager_with_proxy):
         """测试成功切换代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["use", "test-proxy"])
 
             assert result.exit_code == 0
@@ -302,7 +310,9 @@ class TestCurrentCommand:
 
     def test_current_command_with_proxy(self, runner, mock_manager_with_proxy):
         """测试显示当前代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["current"])
 
             assert result.exit_code == 0
@@ -328,7 +338,9 @@ class TestRemoveCommand:
 
     def test_remove_command_success(self, runner, mock_manager_with_proxy):
         """测试成功删除代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             with patch("claudewarp.cli.commands.Confirm.ask", return_value=True):
                 result = runner.invoke(app, ["remove", "test-proxy"])
 
@@ -337,7 +349,9 @@ class TestRemoveCommand:
 
     def test_remove_command_cancelled(self, runner, mock_manager_with_proxy):
         """测试取消删除代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             with patch("claudewarp.cli.commands.Confirm.ask", return_value=False):
                 result = runner.invoke(app, ["remove", "test-proxy"])
 
@@ -347,7 +361,9 @@ class TestRemoveCommand:
 
     def test_remove_command_force(self, runner, mock_manager_with_proxy):
         """测试强制删除代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["remove", "test-proxy", "--force"])
 
             assert result.exit_code == 0
@@ -377,7 +393,9 @@ export ANTHROPIC_BASE_URL="https://api.example.com/"
 export ANTHROPIC_API_KEY="sk-1234567890abcdef"
         """.strip()
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--shell", "bash"])
 
             assert result.exit_code == 0
@@ -391,7 +409,9 @@ set -x ANTHROPIC_BASE_URL "https://api.example.com/"
 set -x ANTHROPIC_API_KEY "sk-1234567890abcdef"
         """.strip()
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--shell", "fish"])
 
             assert result.exit_code == 0
@@ -405,7 +425,9 @@ $env:ANTHROPIC_BASE_URL="https://api.example.com/"
 $env:ANTHROPIC_API_KEY="sk-1234567890abcdef"
         """.strip()
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--shell", "powershell"])
 
             assert result.exit_code == 0
@@ -418,7 +440,9 @@ export ANTHROPIC_BASE_URL="https://api.example.com/"
 export ANTHROPIC_API_KEY="sk-1234567890abcdef"
         """.strip()
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--no-comments"])
 
             assert result.exit_code == 0
@@ -431,7 +455,9 @@ export CUSTOM_BASE_URL="https://api.example.com/"
 export CUSTOM_API_KEY="sk-1234567890abcdef"
         """.strip()
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--prefix", "CUSTOM_"])
 
             assert result.exit_code == 0
@@ -447,7 +473,9 @@ export ANTHROPIC_API_KEY="sk-1234567890abcdef"
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             temp_path = temp_file.name
 
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["export", "--output", temp_path])
 
             assert result.exit_code == 0
@@ -479,7 +507,9 @@ class TestInfoCommand:
 
     def test_info_command_proxy_details(self, runner, mock_manager_with_proxy):
         """测试显示代理详细信息"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.validate_proxy_connection.return_value = (True, "配置格式有效")
 
             result = runner.invoke(app, ["info", "test-proxy"])
@@ -490,7 +520,9 @@ class TestInfoCommand:
 
     def test_info_command_statistics(self, runner, mock_manager_with_proxy):
         """测试显示统计信息"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["info"])
 
             assert result.exit_code == 0
@@ -502,7 +534,9 @@ class TestEditCommand:
 
     def test_edit_command_success(self, runner, mock_manager_with_proxy):
         """测试成功编辑代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["edit", "test-proxy", "--desc", "新的描述"])
 
             assert result.exit_code == 0
@@ -510,7 +544,9 @@ class TestEditCommand:
 
     def test_edit_command_no_changes(self, runner, mock_manager_with_proxy):
         """测试没有指定更新字段"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["edit", "test-proxy"])
 
             assert result.exit_code == 0
@@ -518,17 +554,21 @@ class TestEditCommand:
 
     def test_edit_command_with_rename(self, runner, mock_manager_with_proxy):
         """测试重命名代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             # 模拟重命名更新函数
             with patch("claudewarp.cli.commands._update_proxy_with_rename") as mock_rename:
                 result = runner.invoke(app, ["edit", "test-proxy", "--name", "new-proxy"])
-                
+
                 assert result.exit_code == 0
                 mock_rename.assert_called_once()
 
     def test_edit_command_interactive(self, runner, mock_manager_with_proxy):
         """测试交互式编辑"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             with patch("claudewarp.cli.commands.Prompt.ask") as mock_prompt:
                 with patch("claudewarp.cli.commands.Confirm.ask", return_value=True):
                     mock_prompt.side_effect = [
@@ -536,11 +576,11 @@ class TestEditCommand:
                         "https://updated.example.com/",
                         "sk-updated123456",
                         "Updated description",
-                        "test,updated"
+                        "test,updated",
                     ]
-                    
+
                     result = runner.invoke(app, ["edit", "test-proxy", "--interactive"])
-                    
+
                     assert result.exit_code == 0
                     mock_manager_with_proxy.update_proxy.assert_called_once()
 
@@ -550,7 +590,9 @@ class TestSearchCommand:
 
     def test_search_command_with_results(self, runner, mock_manager_with_proxy):
         """测试搜索有结果"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.search_proxies.return_value = {
                 "test-proxy": mock_manager_with_proxy.get_proxy.return_value
             }
@@ -574,7 +616,9 @@ class TestSearchCommand:
 
     def test_search_command_custom_fields(self, runner, mock_manager_with_proxy):
         """测试自定义搜索字段"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.search_proxies.return_value = {
                 "test-proxy": mock_manager_with_proxy.get_proxy.return_value
             }
@@ -583,7 +627,9 @@ class TestSearchCommand:
 
             assert result.exit_code == 0
             assert "test-proxy" in result.stdout
-            mock_manager_with_proxy.search_proxies.assert_called_with("test", ["name", "description"])
+            mock_manager_with_proxy.search_proxies.assert_called_with(
+                "test", ["name", "description"]
+            )
 
 
 class TestCLIErrorHandling:
@@ -655,17 +701,14 @@ class TestCLIHelpers:
             description="Old description",
             tags=["test"],
         )
-        
+
         mock_manager.get_proxy.return_value = old_proxy
         mock_manager.get_current_proxy.return_value = old_proxy  # 是当前代理
-        
-        update_kwargs = {
-            "description": "New description",
-            "tags": ["test", "updated"]
-        }
-        
+
+        update_kwargs = {"description": "New description", "tags": ["test", "updated"]}
+
         _update_proxy_with_rename(mock_manager, "old-proxy", "new-proxy", update_kwargs)
-        
+
         # 验证调用顺序
         mock_manager.get_proxy.assert_called_with("old-proxy")
         mock_manager.remove_proxy.assert_called_with("old-proxy")
@@ -754,39 +797,39 @@ class TestCLIFormatters:
         """测试代理表格格式化"""
         proxies = {"test-proxy": sample_proxy}
         table = format_proxy_table(proxies, "test-proxy")
-        
+
         assert isinstance(table, Table)
         assert table.title == "代理服务器列表"
 
     def test_format_proxy_table_empty(self):
         """测试空代理表格格式化"""
         table = format_proxy_table({}, None)
-        
+
         assert isinstance(table, Table)
         assert len(table.rows) == 0
 
     def test_format_proxy_info(self, sample_proxy):
         """测试代理信息格式化"""
         panel = format_proxy_info(sample_proxy, detailed=True)
-        
+
         assert isinstance(panel, Panel)
         assert "test-proxy" in str(panel)
 
     def test_format_proxy_info_simple(self, sample_proxy):
         """测试代理信息简单格式化"""
         panel = format_proxy_info(sample_proxy, detailed=False)
-        
+
         assert isinstance(panel, Panel)
         assert "test-proxy" in str(panel)
 
     def test_format_export_output(self):
         """测试环境变量导出格式化"""
         export_content = 'export ANTHROPIC_API_KEY="sk-test"\nexport ANTHROPIC_BASE_URL="https://api.example.com/"'
-        
+
         result = format_export_output(export_content, "bash")
-        
+
         # 应该返回Syntax对象
-        assert hasattr(result, 'code')
+        assert hasattr(result, "code")
 
     def test_format_messages(self):
         """测试消息格式化函数"""
@@ -794,7 +837,7 @@ class TestCLIFormatters:
         error_msg = format_error("操作失败")
         warning_msg = format_warning("警告信息")
         info_msg = format_info("信息提示")
-        
+
         assert "✓" in str(success_msg)
         assert "✗" in str(error_msg)
         assert "⚠" in str(warning_msg)
@@ -808,7 +851,7 @@ class TestCLIMain:
         """测试主程序成功执行"""
         with patch("claudewarp.cli.main.typer_main") as mock_typer_main:
             result = main()
-            
+
             assert result == 0
             mock_typer_main.assert_called_once()
 
@@ -816,36 +859,36 @@ class TestCLIMain:
         """测试主程序键盘中断"""
         with patch("claudewarp.cli.main.typer_main", side_effect=KeyboardInterrupt()):
             result = main()
-            
+
             assert result == 130
 
     def test_main_exception(self):
         """测试主程序异常处理"""
         with patch("claudewarp.cli.main.typer_main", side_effect=Exception("测试异常")):
             result = main()
-            
+
             assert result == 1
 
     def test_cli_main_compatibility(self):
         """测试CLI兼容性入口函数"""
         with patch("claudewarp.cli.main.main", return_value=0) as mock_main:
             result = cli_main(["list"])  # 参数应该被忽略
-            
+
             assert result == 0
             mock_main.assert_called_once()
 
     def test_setup_colored_logging(self):
         """测试彩色日志设置"""
         import logging
-        
+
         # 清除现有处理器
         logger = logging.getLogger()
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
-        
+
         # 测试设置函数
         setup_colored_logging()
-        
+
         # 验证日志器配置
         assert logger.level == logging.INFO
         assert len(logger.handlers) > 0
@@ -861,7 +904,7 @@ class TestAdditionalCLICommands:
     def test_info_command_without_proxy_name(self, runner):
         """测试info命令不指定代理名称"""
         result = runner.invoke(app, ["info"])
-        
+
         assert result.exit_code == 0
         assert "使用 'cw info <name>' 查看特定代理的详细信息" in result.stdout
 
@@ -871,9 +914,9 @@ class TestAdditionalCLICommands:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.export_environment.return_value = "export TEST=value"
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["export", "--shell", "invalid"])
-            
+
             # 应该使用默认配置处理
             assert result.exit_code == 0
 
@@ -881,7 +924,7 @@ class TestAdditionalCLICommands:
         """测试列表命令处理长URL"""
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
-            
+
             long_url_proxy = ProxyServer(
                 name="long-url-proxy",
                 base_url="https://very-long-url-that-exceeds-thirty-characters.example.com/api/v1/",
@@ -889,13 +932,13 @@ class TestAdditionalCLICommands:
                 description="Long URL proxy",
                 tags=["test"],
             )
-            
+
             mock_manager.list_proxies.return_value = {"long-url-proxy": long_url_proxy}
             mock_manager.get_current_proxy.return_value = None
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["list"])
-            
+
             assert result.exit_code == 0
             assert "long-url-proxy" in result.stdout
 
@@ -903,21 +946,57 @@ class TestAdditionalCLICommands:
         """测试添加命令的各种验证错误"""
         test_cases = [
             # 无效URL
-            (["add", "--name", "test", "--url", "invalid-url", "--key", "sk-test", "--no-interactive"], "invalid-url"),
+            (
+                [
+                    "add",
+                    "--name",
+                    "test",
+                    "--url",
+                    "invalid-url",
+                    "--key",
+                    "sk-test",
+                    "--no-interactive",
+                ],
+                "invalid-url",
+            ),
             # 空名称
-            (["add", "--name", "", "--url", "https://api.example.com/", "--key", "sk-test", "--no-interactive"], ""),
+            (
+                [
+                    "add",
+                    "--name",
+                    "",
+                    "--url",
+                    "https://api.example.com/",
+                    "--key",
+                    "sk-test",
+                    "--no-interactive",
+                ],
+                "",
+            ),
             # 短API密钥
-            (["add", "--name", "test", "--url", "https://api.example.com/", "--key", "sk", "--no-interactive"], "sk"),
+            (
+                [
+                    "add",
+                    "--name",
+                    "test",
+                    "--url",
+                    "https://api.example.com/",
+                    "--key",
+                    "sk",
+                    "--no-interactive",
+                ],
+                "sk",
+            ),
         ]
-        
+
         for args, invalid_value in test_cases:
             with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
                 mock_manager = Mock(spec=ProxyManager)
                 mock_manager.add_proxy.side_effect = ValidationError(f"Invalid {invalid_value}")
                 mock_get_manager.return_value = mock_manager
-                
+
                 result = runner.invoke(app, args)
-                
+
                 assert result.exit_code == 1
 
 
@@ -926,22 +1005,26 @@ class TestApplyCommand:
 
     def test_apply_command_success(self, runner, mock_manager_with_proxy):
         """测试成功应用Claude Code配置"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.apply_claude_code_setting.return_value = True
-            
+
             result = runner.invoke(app, ["apply", "test-proxy"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.apply_claude_code_setting.assert_called_with("test-proxy")
             assert "成功应用" in result.stdout
 
     def test_apply_command_current_proxy(self, runner, mock_manager_with_proxy):
         """测试应用当前代理配置"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.apply_claude_code_setting.return_value = True
-            
+
             result = runner.invoke(app, ["apply"])
-            
+
             assert result.exit_code == 0
             # 应该调用当前代理的名称
             mock_manager_with_proxy.apply_claude_code_setting.assert_called()
@@ -952,9 +1035,9 @@ class TestApplyCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.apply_claude_code_setting.return_value = False
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["apply", "test-proxy"])
-            
+
             assert result.exit_code == 1
             assert "应用失败" in result.stdout
 
@@ -964,9 +1047,9 @@ class TestApplyCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.get_current_proxy.return_value = None
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["apply"])
-            
+
             assert result.exit_code == 1
             assert "未设置" in result.stdout
 
@@ -976,34 +1059,40 @@ class TestValidateCommand:
 
     def test_validate_command_success(self, runner, mock_manager_with_proxy):
         """测试成功验证代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.validate_proxy_connection.return_value = (True, "连接成功")
-            
+
             result = runner.invoke(app, ["validate", "test-proxy"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.validate_proxy_connection.assert_called_with("test-proxy")
             assert "验证成功" in result.stdout
 
     def test_validate_command_failure(self, runner, mock_manager_with_proxy):
         """测试验证代理失败"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.validate_proxy_connection.return_value = (False, "连接失败")
-            
+
             result = runner.invoke(app, ["validate", "test-proxy"])
-            
+
             assert result.exit_code == 1
             assert "验证失败" in result.stdout
 
     def test_validate_command_all_proxies(self, runner, mock_manager_with_proxy):
         """测试验证所有代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.validate_all_proxies.return_value = {
                 "test-proxy": (True, "连接成功")
             }
-            
+
             result = runner.invoke(app, ["validate", "--all"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.validate_all_proxies.assert_called_once()
 
@@ -1013,9 +1102,9 @@ class TestValidateCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.get_proxy.side_effect = ProxyNotFoundError("代理不存在")
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["validate", "nonexistent"])
-            
+
             assert result.exit_code == 1
             assert "不存在" in result.stdout
 
@@ -1025,35 +1114,41 @@ class TestStatusCommand:
 
     def test_status_command_success(self, runner, mock_manager_with_proxy):
         """测试成功显示状态"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.get_status.return_value = {
                 "total_proxies": 1,
                 "active_proxies": 1,
                 "current_proxy": "test-proxy",
                 "config_version": "1.0",
                 "config_updated_at": "2024-01-01T00:00:00",
-                "claude_code_configured": True
+                "claude_code_configured": True,
             }
-            
+
             result = runner.invoke(app, ["status"])
-            
+
             assert result.exit_code == 0
             assert "总代理数" in result.stdout
             assert "当前代理" in result.stdout
 
     def test_status_command_detailed(self, runner, mock_manager_with_proxy):
         """测试详细状态显示"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["status", "--detailed"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.get_status.assert_called_once()
 
     def test_status_command_json_format(self, runner, mock_manager_with_proxy):
         """测试JSON格式状态"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["status", "--format", "json"])
-            
+
             assert result.exit_code == 0
             assert '"total_proxies"' in result.stdout
 
@@ -1067,9 +1162,9 @@ class TestConfigCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.get_config_value.return_value = "test-value"
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["config", "get", "test-key"])
-            
+
             assert result.exit_code == 0
             assert "test-value" in result.stdout
 
@@ -1078,9 +1173,9 @@ class TestConfigCommand:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["config", "set", "test-key", "test-value"])
-            
+
             assert result.exit_code == 0
             mock_manager.set_config_value.assert_called_with("test-key", "test-value")
 
@@ -1090,9 +1185,9 @@ class TestConfigCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.get_all_config.return_value = {"key1": "value1", "key2": "value2"}
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["config", "list"])
-            
+
             assert result.exit_code == 0
             assert "key1" in result.stdout
             assert "value1" in result.stdout
@@ -1103,40 +1198,48 @@ class TestTagCommand:
 
     def test_tag_list_command(self, runner, mock_manager_with_proxy):
         """测试列出所有标签"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.get_all_tags.return_value = ["test", "dev", "prod"]
-            
+
             result = runner.invoke(app, ["tag", "list"])
-            
+
             assert result.exit_code == 0
             assert "test" in result.stdout
             assert "dev" in result.stdout
 
     def test_tag_add_command(self, runner, mock_manager_with_proxy):
         """测试为代理添加标签"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["tag", "add", "test-proxy", "new-tag"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.add_proxy_tag.assert_called_with("test-proxy", "new-tag")
 
     def test_tag_remove_command(self, runner, mock_manager_with_proxy):
         """测试从代理移除标签"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             result = runner.invoke(app, ["tag", "remove", "test-proxy", "test"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.remove_proxy_tag.assert_called_with("test-proxy", "test")
 
     def test_tag_search_command(self, runner, mock_manager_with_proxy):
         """测试按标签搜索代理"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             mock_manager_with_proxy.search_by_tags.return_value = {
                 "test-proxy": mock_manager_with_proxy.get_proxy.return_value
             }
-            
+
             result = runner.invoke(app, ["tag", "search", "test"])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.search_by_tags.assert_called_with(["test"])
 
@@ -1149,15 +1252,15 @@ class TestBackupCommand:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
+
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
                 backup_path = temp_file.name
-            
+
             result = runner.invoke(app, ["backup", "create", backup_path])
-            
+
             assert result.exit_code == 0
             mock_manager.create_backup.assert_called_with(backup_path)
-            
+
             # 清理临时文件
             Path(backup_path).unlink(missing_ok=True)
 
@@ -1166,17 +1269,17 @@ class TestBackupCommand:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
+
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
                 backup_path = temp_file.name
                 # 写入测试数据
                 json.dump({"test": "data"}, temp_file)
-            
+
             result = runner.invoke(app, ["backup", "restore", backup_path])
-            
+
             assert result.exit_code == 0
             mock_manager.restore_backup.assert_called_with(backup_path)
-            
+
             # 清理临时文件
             Path(backup_path).unlink(missing_ok=True)
 
@@ -1186,12 +1289,12 @@ class TestBackupCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.list_backups.return_value = [
                 {"name": "backup1.json", "created_at": "2024-01-01T00:00:00"},
-                {"name": "backup2.json", "created_at": "2024-01-02T00:00:00"}
+                {"name": "backup2.json", "created_at": "2024-01-02T00:00:00"},
             ]
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["backup", "list"])
-            
+
             assert result.exit_code == 0
             assert "backup1.json" in result.stdout
 
@@ -1204,7 +1307,7 @@ class TestImportExportCommand:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
+
             # 创建临时配置文件
             config_data = {
                 "proxies": {
@@ -1212,34 +1315,36 @@ class TestImportExportCommand:
                         "name": "imported-proxy",
                         "base_url": "https://api.imported.com/",
                         "api_key": "sk-imported123456",
-                        "description": "导入的代理"
+                        "description": "导入的代理",
                     }
                 }
             }
-            
-            with tempfile.NamedTemporaryFile(mode='w', suffix=".json", delete=False) as temp_file:
+
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as temp_file:
                 json.dump(config_data, temp_file)
                 config_path = temp_file.name
-            
+
             result = runner.invoke(app, ["import", config_path])
-            
+
             assert result.exit_code == 0
             mock_manager.import_config.assert_called_with(config_path)
-            
+
             # 清理临时文件
             Path(config_path).unlink(missing_ok=True)
 
     def test_export_to_file(self, runner, mock_manager_with_proxy):
         """测试导出配置到文件"""
-        with patch("claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy):
+        with patch(
+            "claudewarp.cli.commands.get_proxy_manager", return_value=mock_manager_with_proxy
+        ):
             with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as temp_file:
                 export_path = temp_file.name
-            
+
             result = runner.invoke(app, ["export", "--output", export_path])
-            
+
             assert result.exit_code == 0
             mock_manager_with_proxy.export_config.assert_called_with(export_path)
-            
+
             # 清理临时文件
             Path(export_path).unlink(missing_ok=True)
 
@@ -1248,9 +1353,9 @@ class TestImportExportCommand:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["import", "test.json", "--merge", "replace"])
-            
+
             mock_manager.import_config.assert_called_with("test.json", merge_strategy="replace")
 
 
@@ -1260,14 +1365,14 @@ class TestVerboseLogging:
     def test_verbose_flag_enables_debug_logging(self, runner):
         """测试verbose标志启用调试日志"""
         result = runner.invoke(app, ["--verbose", "list"])
-        
+
         # 检查是否启用了详细日志输出
         # 这里主要测试命令能够正常执行，实际的日志级别检查需要更复杂的设置
 
     def test_quiet_flag_reduces_output(self, runner):
         """测试quiet标志减少输出"""
         result = runner.invoke(app, ["--quiet", "list"])
-        
+
         # quiet模式下输出应该更少
 
 
@@ -1277,20 +1382,20 @@ class TestHelpAndVersion:
     def test_help_command(self, runner):
         """测试显示帮助信息"""
         result = runner.invoke(app, ["--help"])
-        
+
         assert result.exit_code == 0
         assert "Claude中转站管理工具" in result.stdout
 
     def test_version_command(self, runner):
         """测试显示版本信息"""
         result = runner.invoke(app, ["--version"])
-        
+
         assert result.exit_code == 0
 
     def test_command_specific_help(self, runner):
         """测试命令特定的帮助"""
         result = runner.invoke(app, ["add", "--help"])
-        
+
         assert result.exit_code == 0
         assert "添加代理" in result.stdout
 
@@ -1301,13 +1406,13 @@ class TestShellCompletion:
     def test_bash_completion(self, runner):
         """测试Bash自动完成脚本生成"""
         result = runner.invoke(app, ["--install-completion", "bash"])
-        
+
         # 测试是否能正常生成completion脚本
 
     def test_fish_completion(self, runner):
         """测试Fish自动完成脚本生成"""
         result = runner.invoke(app, ["--install-completion", "fish"])
-        
+
         # 测试是否能正常生成completion脚本
 
 
@@ -1318,9 +1423,9 @@ class TestErrorRecovery:
         """测试损坏配置文件的恢复"""
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_get_manager.side_effect = ConfigError("配置文件损坏")
-            
+
             result = runner.invoke(app, ["list"])
-            
+
             assert result.exit_code == 1
             assert "配置文件" in result.stdout
 
@@ -1330,9 +1435,9 @@ class TestErrorRecovery:
             mock_manager = Mock(spec=ProxyManager)
             mock_manager.validate_proxy_connection.side_effect = NetworkError("网络超时")
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["validate", "test-proxy"])
-            
+
             assert result.exit_code == 1
             assert "网络" in result.stdout
 
@@ -1340,9 +1445,9 @@ class TestErrorRecovery:
         """测试权限拒绝处理"""
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_get_manager.side_effect = PermissionError("权限不足")
-            
+
             result = runner.invoke(app, ["list"])
-            
+
             assert result.exit_code == 1
 
 
@@ -1353,7 +1458,7 @@ class TestPerformanceOptimizations:
         """测试大量代理列表的性能"""
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
-            
+
             # 模拟大量代理
             large_proxy_list = {}
             for i in range(1000):
@@ -1361,15 +1466,15 @@ class TestPerformanceOptimizations:
                     name=f"proxy-{i}",
                     base_url=f"https://api{i}.example.com/",
                     api_key=f"sk-{i:016d}",
-                    description=f"代理 {i}"
+                    description=f"代理 {i}",
                 )
                 large_proxy_list[f"proxy-{i}"] = proxy
-            
+
             mock_manager.list_proxies.return_value = large_proxy_list
             mock_get_manager.return_value = mock_manager
-            
+
             result = runner.invoke(app, ["list"])
-            
+
             assert result.exit_code == 0
 
     def test_pagination_for_large_lists(self, runner):
@@ -1378,7 +1483,7 @@ class TestPerformanceOptimizations:
             mock_manager = Mock(spec=ProxyManager)
             # 测试分页逻辑
             result = runner.invoke(app, ["list", "--limit", "10", "--offset", "20"])
-            
+
             assert result.exit_code == 0
 
 
@@ -1387,15 +1492,39 @@ class TestEdgeCases:
 
     def test_empty_proxy_name(self, runner):
         """测试空代理名称"""
-        result = runner.invoke(app, ["add", "--name", "", "--url", "https://api.example.com/", "--key", "sk-test", "--no-interactive"])
-        
+        result = runner.invoke(
+            app,
+            [
+                "add",
+                "--name",
+                "",
+                "--url",
+                "https://api.example.com/",
+                "--key",
+                "sk-test",
+                "--no-interactive",
+            ],
+        )
+
         assert result.exit_code == 1
 
     def test_very_long_proxy_name(self, runner):
         """测试非常长的代理名称"""
         long_name = "a" * 1000
-        result = runner.invoke(app, ["add", "--name", long_name, "--url", "https://api.example.com/", "--key", "sk-test", "--no-interactive"])
-        
+        result = runner.invoke(
+            app,
+            [
+                "add",
+                "--name",
+                long_name,
+                "--url",
+                "https://api.example.com/",
+                "--key",
+                "sk-test",
+                "--no-interactive",
+            ],
+        )
+
         # 应该有合理的长度限制
 
     def test_special_characters_in_name(self, runner):
@@ -1403,9 +1532,21 @@ class TestEdgeCases:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
-            result = runner.invoke(app, ["add", "--name", "proxy-with-特殊字符-and-emoji-🚀", "--url", "https://api.example.com/", "--key", "sk-test", "--no-interactive"])
-            
+
+            result = runner.invoke(
+                app,
+                [
+                    "add",
+                    "--name",
+                    "proxy-with-特殊字符-and-emoji-🚀",
+                    "--url",
+                    "https://api.example.com/",
+                    "--key",
+                    "sk-test",
+                    "--no-interactive",
+                ],
+            )
+
             # 应该能正确处理特殊字符
 
     def test_unicode_in_description(self, runner):
@@ -1413,8 +1554,22 @@ class TestEdgeCases:
         with patch("claudewarp.cli.commands.get_proxy_manager") as mock_get_manager:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
-            
-            result = runner.invoke(app, ["add", "--name", "test", "--url", "https://api.example.com/", "--key", "sk-test", "--desc", "描述包含中文和emoji 🌟", "--no-interactive"])
+
+            result = runner.invoke(
+                app,
+                [
+                    "add",
+                    "--name",
+                    "test",
+                    "--url",
+                    "https://api.example.com/",
+                    "--key",
+                    "sk-test",
+                    "--desc",
+                    "描述包含中文和emoji 🌟",
+                    "--no-interactive",
+                ],
+            )
 
 
 class TestConcurrency:
@@ -1430,6 +1585,3 @@ class TestConcurrency:
         """测试文件锁定行为"""
         # 测试配置文件的锁定机制，防止并发写入冲突
         pass
-
-
-                assert result.exit_code == 1

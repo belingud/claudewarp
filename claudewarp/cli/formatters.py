@@ -29,9 +29,7 @@ def format_proxy_table(
     Returns:
         Table: 格式化的表格
     """
-    table = Table(
-        title="代理服务列表", box=box.ROUNDED, show_header=True, header_style="bold blue"
-    )
+    table = Table(title="代理服务列表", box=box.ROUNDED, show_header=True, header_style="bold blue")
 
     # 添加列
     table.add_column("状态", style="", width=6, justify="center")
@@ -107,6 +105,13 @@ def format_proxy_info(proxy: ProxyServer, detailed: bool = True) -> Panel:
     if proxy.tags:
         tags_text = ", ".join(f"[cyan]{tag}[/cyan]" for tag in proxy.tags)
         info_lines.append(f"[bold]标签:[/bold] {tags_text}")
+
+    # 模型配置
+    if proxy.bigmodel:
+        info_lines.append(f"[bold]大模型:[/bold] [yellow]{proxy.bigmodel}[/yellow]")
+
+    if proxy.smallmodel:
+        info_lines.append(f"[bold]小模型:[/bold] [yellow]{proxy.smallmodel}[/yellow]")
 
     if detailed:
         # 详细信息

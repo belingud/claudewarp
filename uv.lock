@@ -205,7 +205,7 @@ wheels = [
 
 [[package]]
 name = "claudewarp"
-version = "0.0.19"
+version = "0.0.21"
 source = { editable = "." }
 dependencies = [
     { name = "colorlog" },
@@ -224,6 +224,7 @@ dev = [
     { name = "pre-commit", version = "3.5.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
     { name = "pre-commit", version = "4.2.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version >= '3.9'" },
     { name = "pyinstaller" },
+    { name = "pyright" },
     { name = "pytest", version = "8.3.5", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
     { name = "pytest", version = "8.4.1", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version >= '3.9'" },
     { name = "pytest-cov", version = "5.0.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
@@ -239,6 +240,7 @@ docs = [
     { name = "mkdocstrings", version = "0.30.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, extra = ["python"], marker = "python_full_version >= '3.9'" },
 ]
 gui = [
+    { name = "darkdetect" },
     { name = "pyside6" },
     { name = "pyside6-fluent-widgets" },
 ]
@@ -258,6 +260,7 @@ dev = [
     { name = "pillow", specifier = ">=10.4.0" },
     { name = "pre-commit", specifier = ">=3.0.0" },
     { name = "pyinstaller", specifier = ">=6.14.2" },
+    { name = "pyright", specifier = ">=1.1.403" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-cov", specifier = ">=4.0.0" },
     { name = "pytest-mock", specifier = ">=3.10.0" },
@@ -269,6 +272,7 @@ docs = [
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.20.0" },
 ]
 gui = [
+    { name = "darkdetect", specifier = ">=0.8.0" },
     { name = "pyside6", specifier = ">=6.5.0,<6.8.0" },
     { name = "pyside6-fluent-widgets", specifier = ">=1.7.6,<2.0.0" },
 ]
@@ -8675,6 +8679,20 @@ wheels = [
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/d7/4f/194e3e7c01861a5e46dfe9e1fa28ad01fd07190cb514e41a7dcf1f0b7031/pyobjc_framework_webkit-11.1-cp314-cp314-macosx_11_0_universal2.whl", hash = "sha256:13b774d4244734cb77bf3c3648149c163f62acaa105243d7c48bb3fd856b5628" },
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/31/09/28884e7c10d3a76a76c2c8f55369dd96a90f0283800c68f5c764e1fb8e2e/pyobjc_framework_webkit-11.1-cp314-cp314t-macosx_11_0_universal2.whl", hash = "sha256:c1c00d549ab1d50e3d7e8f5f71352b999d2c32dc2365c299f317525eb9bff916" },
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/13/46/ad2016804819cfe89d39fa6756252181dc1b46bc478ef8f091248f3ed143/pyobjc_framework_webkit-11.1-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:94534450e4b3c0a4fe8ad4fa9258afc07ebfe36e1b3966f0fb5cd437c89ccfbf" },
+]
+
+[[package]]
+name = "pyright"
+version = "1.1.403"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+dependencies = [
+    { name = "nodeenv" },
+    { name = "typing-extensions", version = "4.13.2", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
+    { name = "typing-extensions", version = "4.14.1", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/fe/f6/35f885264ff08c960b23d1542038d8da86971c5d8c955cfab195a4f672d7/pyright-1.1.403.tar.gz", hash = "sha256:3ab69b9f41c67fb5bbb4d7a36243256f0d549ed3608678d381d5f51863921104" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/49/b6/b04e5c2f41a5ccad74a1a4759da41adb20b4bc9d59a5e08d29ba60084d07/pyright-1.1.403-py3-none-any.whl", hash = "sha256:c0eeca5aa76cbef3fcc271259bbd785753c7ad7bcac99a9162b4c4c7daed23b3" },
 ]
 
 [[package]]

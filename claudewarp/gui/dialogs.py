@@ -4,15 +4,18 @@ GUI对话框组件
 提供各种对话框窗口，包括添加代理、编辑代理、确认删除等。
 """
 
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
+    QLineEdit,
     QMessageBox,
     QProgressDialog,
     QVBoxLayout,
@@ -33,14 +36,26 @@ from qfluentwidgets import (
 from claudewarp.core.models import ExportFormat, ProxyServer
 
 
+def get_app_icon() -> QIcon:
+    """获取应用程序图标"""
+    try:
+        icon_path = Path(__file__).parent / "resources" / "icons" / "claudewarp.ico"
+        if icon_path.exists():
+            return QIcon(str(icon_path))
+    except Exception:
+        pass
+    return QIcon()  # 返回空图标作为后备
+
+
 class AddProxyDialog(QDialog):
     """添加代理对话框"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("添加代理服务器")
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(450, 350)
         self.setModal(True)
+        self.setWindowIcon(get_app_icon())
 
         self.setup_ui()
         self.setup_connections()
@@ -52,20 +67,29 @@ class AddProxyDialog(QDialog):
         # 表单布局
         form_layout = QFormLayout()
 
+        # 设置表单布局属性以优化空间使用
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        form_layout.setHorizontalSpacing(10)
+        form_layout.setVerticalSpacing(8)
+
         # 名称
         self.name_edit = LineEdit()
         self.name_edit.setPlaceholderText("输入代理名称，如: proxy-cn")
+        self.name_edit.setMinimumWidth(250)
         form_layout.addRow("代理名称 *:", self.name_edit)
 
         # URL
         self.url_edit = LineEdit()
         self.url_edit.setPlaceholderText("输入代理URL，如: https://api.example.com/")
+        self.url_edit.setMinimumWidth(250)
         form_layout.addRow("代理URL *:", self.url_edit)
 
         # API密钥
         self.key_edit = LineEdit()
-        self.key_edit.setEchoMode(LineEdit.Password)
+        self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.key_edit.setPlaceholderText("输入API密钥")
+        self.key_edit.setMinimumWidth(250)
         form_layout.addRow("API密钥 *:", self.key_edit)
 
         # 显示密钥复选框
@@ -75,17 +99,42 @@ class AddProxyDialog(QDialog):
         # 描述
         self.desc_edit = LineEdit()
         self.desc_edit.setPlaceholderText("输入描述信息（可选）")
+        self.desc_edit.setMinimumWidth(250)
         form_layout.addRow("描述:", self.desc_edit)
 
         # 标签
         self.tags_edit = LineEdit()
         self.tags_edit.setPlaceholderText("输入标签，用逗号分隔（可选）")
+        self.tags_edit.setMinimumWidth(250)
         form_layout.addRow("标签:", self.tags_edit)
 
         # 启用状态
         self.active_check = CheckBox("启用此代理")
         self.active_check.setChecked(True)
         form_layout.addRow("", self.active_check)
+
+        # 模型配置分割线
+        model_line = QFrame()
+        model_line.setFrameShape(QFrame.Shape.HLine)
+        model_line.setFrameShadow(QFrame.Shadow.Sunken)
+        form_layout.addRow("", model_line)
+
+        # 模型配置标题
+        model_title = BodyLabel("模型配置 (可选)")
+        model_title.setStyleSheet("font-weight: bold; color: #333;")
+        form_layout.addRow("", model_title)
+
+        # 大模型
+        self.bigmodel_edit = LineEdit()
+        self.bigmodel_edit.setPlaceholderText("如: claude-3-5-sonnet-20241022")
+        self.bigmodel_edit.setMinimumWidth(250)
+        form_layout.addRow("大模型:", self.bigmodel_edit)
+
+        # 小模型
+        self.smallmodel_edit = LineEdit()
+        self.smallmodel_edit.setPlaceholderText("如: claude-3-5-haiku-20241022")
+        self.smallmodel_edit.setMinimumWidth(250)
+        form_layout.addRow("小模型:", self.smallmodel_edit)
 
         layout.addLayout(form_layout)
 
@@ -95,12 +144,14 @@ class AddProxyDialog(QDialog):
         layout.addWidget(info_label)
 
         # 按钮
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         layout.addWidget(button_box)
 
         # 设置按钮文本
-        button_box.button(QDialogButtonBox.Ok).setText("添加")
-        button_box.button(QDialogButtonBox.Cancel).setText("取消")
+        button_box.button(QDialogButtonBox.StandardButton.Ok).setText("添加")
+        button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
         # 连接信号
         button_box.accepted.connect(self.accept_dialog)
@@ -125,9 +176,9 @@ class AddProxyDialog(QDialog):
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
-            self.key_edit.setEchoMode(LineEdit.Normal)
+            self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
-            self.key_edit.setEchoMode(LineEdit.Password)
+            self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
     def validate_input(self):
         """验证输入"""
@@ -139,7 +190,7 @@ class AddProxyDialog(QDialog):
         valid = bool(name and url and key)
 
         # 启用/禁用确定按钮
-        self.button_box.button(QDialogButtonBox.Ok).setEnabled(valid)
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
 
     def accept_dialog(self):
         """确认对话框"""
@@ -168,6 +219,8 @@ class AddProxyDialog(QDialog):
             "description": self.desc_edit.text().strip(),
             "tags": tags,
             "is_active": self.active_check.isChecked(),
+            "bigmodel": self.bigmodel_edit.text().strip() or None,
+            "smallmodel": self.smallmodel_edit.text().strip() or None,
         }
 
 
@@ -178,8 +231,9 @@ class EditProxyDialog(QDialog):
         super().__init__(parent)
         self.original_proxy = proxy
         self.setWindowTitle(f"编辑代理: {proxy.name}")
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(450, 350)
         self.setModal(True)
+        self.setWindowIcon(get_app_icon())
 
         self.setup_ui()
         self.setup_connections()
@@ -192,17 +246,26 @@ class EditProxyDialog(QDialog):
         # 表单布局
         form_layout = QFormLayout()
 
+        # 设置表单布局属性以优化空间使用
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        form_layout.setHorizontalSpacing(10)
+        form_layout.setVerticalSpacing(8)
+
         # 名称
         self.name_edit = LineEdit()
+        self.name_edit.setMinimumWidth(250)
         form_layout.addRow("代理名称 *:", self.name_edit)
 
         # URL
         self.url_edit = LineEdit()
+        self.url_edit.setMinimumWidth(250)
         form_layout.addRow("代理URL *:", self.url_edit)
 
         # API密钥
         self.key_edit = LineEdit()
-        self.key_edit.setEchoMode(LineEdit.Password)
+        self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.key_edit.setMinimumWidth(250)
         form_layout.addRow("API密钥 *:", self.key_edit)
 
         # 显示密钥复选框
@@ -211,25 +274,52 @@ class EditProxyDialog(QDialog):
 
         # 描述
         self.desc_edit = LineEdit()
+        self.desc_edit.setMinimumWidth(250)
         form_layout.addRow("描述:", self.desc_edit)
 
         # 标签
         self.tags_edit = LineEdit()
+        self.tags_edit.setMinimumWidth(250)
         form_layout.addRow("标签:", self.tags_edit)
 
         # 启用状态
         self.active_check = CheckBox("启用此代理")
         form_layout.addRow("", self.active_check)
 
+        # 模型配置分割线
+        model_line = QFrame()
+        model_line.setFrameShape(QFrame.Shape.HLine)
+        model_line.setFrameShadow(QFrame.Shadow.Sunken)
+        form_layout.addRow("", model_line)
+
+        # 模型配置标题
+        model_title = BodyLabel("模型配置 (可选)")
+        model_title.setStyleSheet("font-weight: bold; color: #333;")
+        form_layout.addRow("", model_title)
+
+        # 大模型
+        self.bigmodel_edit = LineEdit()
+        self.bigmodel_edit.setPlaceholderText("如: claude-3-5-sonnet-20241022")
+        self.bigmodel_edit.setMinimumWidth(250)
+        form_layout.addRow("大模型:", self.bigmodel_edit)
+
+        # 小模型
+        self.smallmodel_edit = LineEdit()
+        self.smallmodel_edit.setPlaceholderText("如: claude-3-5-haiku-20241022")
+        self.smallmodel_edit.setMinimumWidth(250)
+        form_layout.addRow("小模型:", self.smallmodel_edit)
+
         layout.addLayout(form_layout)
 
         # 按钮
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         layout.addWidget(button_box)
 
         # 设置按钮文本
-        button_box.button(QDialogButtonBox.Ok).setText("更新")
-        button_box.button(QDialogButtonBox.Cancel).setText("取消")
+        button_box.button(QDialogButtonBox.StandardButton.Ok).setText("更新")
+        button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
         # 连接信号
         button_box.accepted.connect(self.accept_dialog)
@@ -256,13 +346,15 @@ class EditProxyDialog(QDialog):
         self.desc_edit.setText(self.original_proxy.description)
         self.tags_edit.setText(", ".join(self.original_proxy.tags))
         self.active_check.setChecked(self.original_proxy.is_active)
+        self.bigmodel_edit.setText(self.original_proxy.bigmodel or "")
+        self.smallmodel_edit.setText(self.original_proxy.smallmodel or "")
 
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
-            self.key_edit.setEchoMode(LineEdit.Normal)
+            self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
-            self.key_edit.setEchoMode(LineEdit.Password)
+            self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
     def validate_input(self):
         """验证输入"""
@@ -274,7 +366,7 @@ class EditProxyDialog(QDialog):
         valid = bool(name and url and key)
 
         # 启用/禁用确定按钮
-        self.button_box.button(QDialogButtonBox.Ok).setEnabled(valid)
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
 
     def accept_dialog(self):
         """确认对话框"""
@@ -305,6 +397,8 @@ class EditProxyDialog(QDialog):
             "description": self.desc_edit.text().strip(),
             "tags": tags,
             "is_active": self.active_check.isChecked(),
+            "bigmodel": self.bigmodel_edit.text().strip() or None,
+            "smallmodel": self.smallmodel_edit.text().strip() or None,
         }
 
 
@@ -316,6 +410,7 @@ class ConfirmDialog(QDialog):
         self.setWindowTitle(title)
         self.setModal(True)
         self.setMinimumSize(300, 150)
+        self.setWindowIcon(get_app_icon())
 
         layout = QVBoxLayout(self)
 
@@ -325,9 +420,11 @@ class ConfirmDialog(QDialog):
         layout.addWidget(message_label)
 
         # 按钮
-        button_box = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No)
-        button_box.button(QDialogButtonBox.Yes).setText("确定")
-        button_box.button(QDialogButtonBox.No).setText("取消")
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No
+        )
+        button_box.button(QDialogButtonBox.StandardButton.Yes).setText("确定")
+        button_box.button(QDialogButtonBox.StandardButton.No).setText("取消")
 
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -338,7 +435,7 @@ class ConfirmDialog(QDialog):
     def confirm(parent, title: str, message: str) -> bool:
         """显示确认对话框"""
         dialog = ConfirmDialog(title, message, parent)
-        return dialog.exec() == QDialog.Accepted
+        return dialog.exec() == QDialog.DialogCode.Accepted
 
 
 class ExportDialog(QDialog):
@@ -347,8 +444,9 @@ class ExportDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("自定义")
-        self.setMinimumSize(400, 250)
+        self.setMinimumSize(450, 300)
         self.setModal(True)
+        self.setWindowIcon(get_app_icon())
 
         self.setup_ui()
         self.setup_connections()
@@ -360,14 +458,22 @@ class ExportDialog(QDialog):
         # 表单布局
         form_layout = QFormLayout()
 
+        # 设置表单布局属性以优化空间使用
+        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        form_layout.setHorizontalSpacing(10)
+        form_layout.setVerticalSpacing(8)
+
         # Shell类型
         self.shell_combo = ComboBox()
         self.shell_combo.addItems(["bash", "fish", "powershell", "zsh"])
+        self.shell_combo.setMinimumWidth(200)
         form_layout.addRow("Shell类型:", self.shell_combo)
 
         # 环境变量前缀
         self.prefix_edit = LineEdit()
         self.prefix_edit.setText("ANTHROPIC_")
+        self.prefix_edit.setMinimumWidth(200)
         form_layout.addRow("变量前缀:", self.prefix_edit)
 
         # 导出所有代理
@@ -391,9 +497,11 @@ class ExportDialog(QDialog):
         layout.addWidget(preview_group)
 
         # 按钮
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.button(QDialogButtonBox.Ok).setText("导出")
-        button_box.button(QDialogButtonBox.Cancel).setText("取消")
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.button(QDialogButtonBox.StandardButton.Ok).setText("导出")
+        button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -447,6 +555,7 @@ class AboutDialog(QDialog):
         self.setWindowTitle("关于")
         self.setFixedSize(400, 300)
         self.setModal(True)
+        self.setWindowIcon(get_app_icon())
 
         self.setup_ui()
 
@@ -479,8 +588,8 @@ class AboutDialog(QDialog):
 
         # 分隔线
         line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(line)
 
         # 描述信息
@@ -503,7 +612,7 @@ class AboutDialog(QDialog):
         )
 
         description.setWordWrap(True)
-        description.setAlignment(Qt.AlignTop)
+        description.setAlignment(Qt.AlignmentFlag.AlignTop)
         layout.addWidget(description)
 
         layout.addStretch()
@@ -529,9 +638,9 @@ class ProgressDialog(QProgressDialog):
         self.setMinimumDuration(0)
 
         # 禁用取消按钮（根据需要）
-        self.setCancelButton(None)
+        self.setCancelButton(None)  # type:ignore
 
-    def update_progress(self, value: int, message: str = None):
+    def update_progress(self, value: int, message: Optional[str] = None):
         """更新进度"""
         self.setValue(value)
         if message:

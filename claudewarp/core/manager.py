@@ -84,6 +84,8 @@ class ProxyManager:
         tags: Optional[List[str]] = None,
         is_active: bool = True,
         set_as_current: bool = False,
+        bigmodel: Optional[str] = None,
+        smallmodel: Optional[str] = None,
     ) -> ProxyServer:
         """添加新的代理服务器
 
@@ -95,6 +97,8 @@ class ProxyManager:
             tags: 标签列表
             is_active: 是否启用
             set_as_current: 是否设置为当前代理
+            bigmodel: 大模型名称
+            smallmodel: 小模型名称
 
         Returns:
             ProxyServer: 添加的代理服务器对象
@@ -117,6 +121,8 @@ class ProxyManager:
                 description=description,
                 tags=tags or [],
                 is_active=is_active,
+                bigmodel=bigmodel,
+                smallmodel=smallmodel,
             )
 
             # 添加到配置
@@ -282,6 +288,8 @@ class ProxyManager:
         description: Optional[str] = None,
         tags: Optional[List[str]] = None,
         is_active: Optional[bool] = None,
+        bigmodel: Optional[str] = None,
+        smallmodel: Optional[str] = None,
     ) -> ProxyServer:
         """更新代理服务器信息
 
@@ -292,6 +300,8 @@ class ProxyManager:
             description: 新的描述（可选）
             tags: 新的标签列表（可选）
             is_active: 新的启用状态（可选）
+            bigmodel: 新的大模型名称（可选）
+            smallmodel: 新的小模型名称（可选）
 
         Returns:
             ProxyServer: 更新后的代理服务器对象
@@ -315,6 +325,8 @@ class ProxyManager:
                 "description": description if description is not None else proxy.description,
                 "tags": tags if tags is not None else proxy.tags,
                 "is_active": is_active if is_active is not None else proxy.is_active,
+                "bigmodel": bigmodel if bigmodel is not None else proxy.bigmodel,
+                "smallmodel": smallmodel if smallmodel is not None else proxy.smallmodel,
                 "created_at": proxy.created_at,  # 保持原创建时间
             }
 
@@ -690,6 +702,14 @@ class ProxyManager:
         merged_config["env"]["ANTHROPIC_BASE_URL"] = proxy.base_url
         merged_config["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = 1
 
+        # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
+        if proxy.bigmodel:
+            merged_config["env"]["ANTHROPIC_MODEL"] = proxy.bigmodel
+
+        # 如果配置了小模型，添加 ANTHROPIC_SMALL_FAST_MODEL 环境变量
+        if proxy.smallmodel:
+            merged_config["env"]["ANTHROPIC_SMALL_FAST_MODEL"] = proxy.smallmodel
+
         # 如果原配置中没有 permissions 字段，添加默认值
         if "permissions" not in merged_config:
             merged_config["permissions"] = {"allow": [], "deny": []}
@@ -705,12 +725,22 @@ class ProxyManager:
         Returns:
             Dict[str, Any]: Claude Code 配置字典
         """
+        env_config = {
+            "ANTHROPIC_API_KEY": proxy.api_key,
+            "ANTHROPIC_BASE_URL": proxy.base_url,
+            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
+        }
+
+        # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
+        if proxy.bigmodel:
+            env_config["ANTHROPIC_MODEL"] = proxy.bigmodel
+
+        # 如果配置了小模型，添加 ANTHROPIC_SMALL_FAST_MODEL 环境变量
+        if proxy.smallmodel:
+            env_config["ANTHROPIC_SMALL_FAST_MODEL"] = proxy.smallmodel
+
         return {
-            "env": {
-                "ANTHROPIC_API_KEY": proxy.api_key,
-                "ANTHROPIC_BASE_URL": proxy.base_url,
-                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
-            },
+            "env": env_config,
             "permissions": {"allow": [], "deny": []},
         }
 

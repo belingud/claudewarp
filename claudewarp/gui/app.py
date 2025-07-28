@@ -6,8 +6,10 @@ GUI应用主程序
 
 import logging
 import sys
+from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication
 
 from claudewarp.core.utils import LevelAlignFilter
@@ -90,8 +92,8 @@ def main(debug: bool = False) -> int:
 
         # 启用高DPI支持
         logger.debug("启用高DPI支持")
-        app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-        app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+        app.setAttribute(Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+        app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 
         # 设置Fluent主题
         logger.debug("设置Fluent主题")
@@ -105,12 +107,15 @@ def main(debug: bool = False) -> int:
 
         window = MainWindow()
 
-        # 设置窗口图标（如果有的话）
+        # 设置窗口图标
         try:
-            # TODO: 添加应用图标
-            # icon = QIcon(":/icons/app.png")
-            # app.setWindowIcon(icon)
-            logger.debug("尚未设置应用图标")
+            icon_path = Path(__file__).parent / "resources" / "icons" / "claudewarp.ico"
+            if icon_path.exists():
+                icon = QIcon(str(icon_path))
+                app.setWindowIcon(icon)
+                logger.debug(f"设置应用图标: {icon_path}")
+            else:
+                logger.warning(f"图标文件不存在: {icon_path}")
         except Exception as e:
             logger.warning(f"设置图标失败: {e}")
 

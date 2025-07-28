@@ -26,6 +26,7 @@ def parse_arguments(args: Optional[List[str]] = None) -> argparse.Namespace:
 def run_gui_mode(debug: bool = False) -> int:
     """运行GUI模式"""
     from claudewarp.gui.app import main as gui_main
+
     gui_main()
     # try:
     #     # 延迟导入GUI模块，避免在CLI模式下加载PySide6
