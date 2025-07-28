@@ -194,8 +194,25 @@ jobs:
             dist/
           retention-days: 30
 
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Nu shell
+        uses: hustcer/setup-nu@v3
+        with:
+          version: "0.99"
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+      
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
         shell: nu {0}
         run: |
           let version = "${{ github.ref }}" | str replace "refs/tags/" "" | str replace "v" ""
@@ -203,23 +220,25 @@ jobs:
 
           # Create release with GitHub CLI
           let release_body = (open .github/templates/github/release_notes.md | str replace '{VERSION}' $version)
+          ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
           
-          # Only run on first platform to avoid duplicate releases
-          if "${{ matrix.platform }}" == "macos" and "${{ matrix.arch }}" == "arm64" {
-            ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
-            
-            # Upload available assets from current platform only
-            let available_files = (ls | where name =~ '\.(zip|dmg|AppImage)$' | get name)
-            if ($available_files | length) > 0 {
-              let assets = ($available_files | str join " ")
-              ^gh release upload $"v($version)" $assets
+          # Find and upload all build artifacts
+          cd artifacts
+          let asset_files = (ls **/*.{zip,dmg,AppImage} | get name)
+          if ($asset_files | length) > 0 {
+            print $"Found ($asset_files | length) assets to upload"
+            for file in $asset_files {
+              print $"Uploading: ($file)"
+              ^gh release upload $"v($version)" $file
             }
+          } else {
+            print "⚠️ No assets found to upload"
           }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
-    needs: [build]
+    needs: [build, release]
     runs-on: ubuntu-latest
     if: always()
 
