@@ -227,8 +227,9 @@ jobs:
           print "📁 Checking artifacts directory structure:"
           ^ls -la
           
-          # Use bash find command to locate all asset files
-          let all_assets = (^find . -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" | lines)
+          # Use bash find command to locate only top-level package files
+          # This avoids uploading internal files like base_library.zip that cause "asset under the same name already exists" errors
+          let all_assets = (^find . -type f \( -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" \) -not -path "*/dist/*" -not -path "*/build/*" | lines)
           
           if ($all_assets | length) > 0 {
             print $"Found ($all_assets | length) assets to upload:"
