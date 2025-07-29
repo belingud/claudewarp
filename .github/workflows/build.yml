@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  PROJECT_NAME: claudewarp
+  PROJECT_NAME: ClaudeWarp
   PYTHON_VERSION: "3.11"
 
 jobs:
@@ -92,12 +92,12 @@ jobs:
             "windows" => {
               $env.PYTHONOPTIMIZE = "2"
               $env.PYTHONDONTWRITEBYTECODE = "1"
-              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico main.py
+              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico --name=ClaudeWarp main.py
             }
             _ => {
               $env.PYTHONOPTIMIZE = "2"
               $env.PYTHONDONTWRITEBYTECODE = "1"
-              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico main.py
+              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico --name=ClaudeWarp main.py
             }
           }
 
@@ -139,21 +139,21 @@ jobs:
             }
             "windows" => {
               print "🪟 Creating Windows package..."
-              if ("dist/claudewarp.exe" | path exists) {
+              if ("dist/ClaudeWarp.exe" | path exists) {
                 let zip_name = $"ClaudeWarp-($version)-windows-($arch).zip"
                 cd dist
-                ^powershell -c $"Compress-Archive -Path claudewarp.exe -DestinationPath ../($zip_name)"
+                ^powershell -c $"Compress-Archive -Path ClaudeWarp.exe -DestinationPath ../($zip_name)"
                 cd ..
                 print "✅ Windows package created"
               }
             }
             "linux" => {
               print "🐧 Creating Linux packages..."
-              if ("dist/claudewarp" | path exists) {
+              if ("dist/ClaudeWarp" | path exists) {
                 # Create ZIP
                 let zip_name = $"ClaudeWarp-($version)-linux-($arch).zip"
                 ^mkdir -p linux-package
-                ^cp dist/claudewarp linux-package/
+                ^cp dist/ClaudeWarp linux-package/
                 if ("README.md" | path exists) { ^cp README.md linux-package/ }
                 if ("LICENSE" | path exists) { ^cp LICENSE linux-package/ }
                 cd linux-package
@@ -164,12 +164,12 @@ jobs:
                 # Create AppImage
                 let appimage_name = $"ClaudeWarp-($version)-linux-($arch).AppImage"
                 ^mkdir -p ClaudeWarp.AppDir/usr/bin ClaudeWarp.AppDir/usr/share/applications
-                ^cp dist/claudewarp ClaudeWarp.AppDir/usr/bin/
+                ^cp dist/ClaudeWarp ClaudeWarp.AppDir/usr/bin/
                 
                 # Copy desktop file template
-                ^cp .github/templates/appimage/claudewarp.desktop ClaudeWarp.AppDir/claudewarp.desktop
-                ^cp .github/templates/appimage/claudewarp.desktop ClaudeWarp.AppDir/usr/share/applications/
-                ^touch ClaudeWarp.AppDir/claudewarp.png
+                ^cp .github/templates/appimage/ClaudeWarp.desktop ClaudeWarp.AppDir/ClaudeWarp.desktop
+                ^cp .github/templates/appimage/ClaudeWarp.desktop ClaudeWarp.AppDir/usr/share/applications/
+                ^touch ClaudeWarp.AppDir/ClaudeWarp.png
                 
                 # Copy AppRun template
                 ^cp .github/templates/appimage/AppRun ClaudeWarp.AppDir/AppRun
@@ -193,7 +193,6 @@ jobs:
             *.zip
             *.dmg
             *.AppImage
-            dist/
           retention-days: 30
 
   release:
