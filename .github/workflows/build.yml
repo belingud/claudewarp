@@ -81,21 +81,25 @@ jobs:
           uv sync --all-groups --all-extras
           echo "✅ Dependencies installed"
 
-      - name: Build application
+      - name: Build GUI application with Nuitka
         shell: nu {0}
         run: |
           let platform = "${{ matrix.platform }}"
           let arch = "${{ matrix.arch }}"
-          print $"🔨 Building ($platform)-($arch)..."
+          print $"🔨 Building GUI application ($platform)-($arch)..."
 
           match $platform {
-            "windows" => {
-              ^pwsh ./scripts/build_pyinstaller.ps1
+            "macos" => {
+              print "🍎 Building macOS GUI app with Nuitka..."
+              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --macos-create-app-bundle --output-dir=build --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads main.py
             }
-            _ => {
-              $env.PYTHONOPTIMIZE = "2"
-              $env.PYTHONDONTWRITEBYTECODE = "1"
-              ^bash scripts/build_pyinstaller.sh
+            "windows" => {
+              print "🪟 Building Windows GUI app with Nuitka..."
+              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --output-dir=build --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads --disable-console --windows-console-mode=disable main.py
+            }
+            "linux" => {
+              print "🐧 Building Linux GUI app with Nuitka..."
+              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --output-dir=build --linux-icon=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads --disable-console main.py
             }
           }
 
@@ -115,17 +119,17 @@ jobs:
           match $platform {
             "macos" => {
               print "💿 Creating macOS packages..."
-              if ("dist/ClaudeWarp.app" | path exists) {
+              if ("build/ClaudeWarp.app" | path exists) {
                 # Create ZIP
                 let zip_name = $"ClaudeWarp-($version)-macos-($arch).zip"
-                cd dist
+                cd build
                 ^zip -r $"../($zip_name)" ClaudeWarp.app
                 cd ..
                 
                 # Create DMG
                 let dmg_name = $"ClaudeWarp-($version)-macos-($arch).dmg"
                 ^mkdir -p dmg-temp
-                ^cp -R dist/ClaudeWarp.app dmg-temp/
+                ^cp -R build/ClaudeWarp.app dmg-temp/
                 try {
                   ^create-dmg --volname "ClaudeWarp" --window-pos 200 120 --window-size 600 300 --icon-size 100 --icon "ClaudeWarp.app" 175 120 --hide-extension "ClaudeWarp.app" --app-drop-link 425 120 --no-internet-enable $dmg_name "dmg-temp"
                 } catch {
@@ -137,9 +141,9 @@ jobs:
             }
             "windows" => {
               print "🪟 Creating Windows package..."
-              if ("dist/claudewarp.exe" | path exists) {
+              if ("build/claudewarp.exe" | path exists) {
                 let zip_name = $"ClaudeWarp-($version)-windows-($arch).zip"
-                cd dist
+                cd build
                 ^powershell -c $"Compress-Archive -Path claudewarp.exe -DestinationPath ../($zip_name)"
                 cd ..
                 print "✅ Windows package created"
@@ -147,11 +151,11 @@ jobs:
             }
             "linux" => {
               print "🐧 Creating Linux packages..."
-              if ("dist/claudewarp" | path exists) {
+              if ("build/claudewarp.bin" | path exists) {
                 # Create ZIP
                 let zip_name = $"ClaudeWarp-($version)-linux-($arch).zip"
                 ^mkdir -p linux-package
-                ^cp dist/claudewarp linux-package/
+                ^cp build/claudewarp.bin linux-package/claudewarp
                 if ("README.md" | path exists) { ^cp README.md linux-package/ }
                 if ("LICENSE" | path exists) { ^cp LICENSE linux-package/ }
                 cd linux-package
@@ -162,7 +166,7 @@ jobs:
                 # Create AppImage
                 let appimage_name = $"ClaudeWarp-($version)-linux-($arch).AppImage"
                 ^mkdir -p ClaudeWarp.AppDir/usr/bin ClaudeWarp.AppDir/usr/share/applications
-                ^cp dist/claudewarp ClaudeWarp.AppDir/usr/bin/
+                ^cp build/claudewarp.bin ClaudeWarp.AppDir/usr/bin/claudewarp
                 
                 # Copy desktop file template
                 ^cp .github/templates/appimage/claudewarp.desktop ClaudeWarp.AppDir/claudewarp.desktop
@@ -191,7 +195,7 @@ jobs:
             *.zip
             *.dmg
             *.AppImage
-            dist/
+            build/
           retention-days: 30
 
   release:

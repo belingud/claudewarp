@@ -6,7 +6,7 @@
 
 import pytest
 
-from core.models import ExportFormat, ProxyConfig, ProxyServer
+from claudewarp.core.models import ExportFormat, ProxyConfig, ProxyServer
 
 
 class TestProxyServer:
@@ -30,6 +30,26 @@ class TestProxyServer:
         assert proxy.is_active is True
         assert isinstance(proxy.created_at, str)
         assert isinstance(proxy.updated_at, str)
+
+    def test_valid_proxy_creation_with_auth_token(self):
+        """测试使用Auth令牌创建有效代理"""
+        proxy = ProxyServer(
+            name="test-proxy",
+            base_url="https://api.example.com/",
+            api_key="",  # 空字符串，因为使用了auth_token
+            auth_token="sk-ant-api03-abcdef1234567890",
+            description="测试代理",
+            tags=["test", "dev"],
+        )
+
+        assert proxy.name == "test-proxy"
+        assert proxy.base_url == "https://api.example.com/"
+        assert proxy.auth_token == "sk-ant-api03-abcdef1234567890"
+        assert proxy.description == "测试代理"
+        assert proxy.tags == ["test", "dev"]
+        assert proxy.is_active is True
+        assert proxy.get_auth_method() == "auth_token"
+        assert proxy.get_active_credential() == "sk-ant-api03-abcdef1234567890"
 
     def test_url_normalization(self):
         """测试URL规范化"""
@@ -68,6 +88,116 @@ class TestProxyServer:
 
         with pytest.raises(ValueError, match="API密钥不能包含空白字符"):
             ProxyServer(name="test", base_url="https://api.example.com/", api_key="sk-123 456 789")
+
+    def test_valid_auth_token_formats(self):
+        """测试有效的Auth令牌格式"""
+        valid_tokens = [
+            "sk-ant-api03-abcdef1234567890",
+            "sk-ant-api03-1234567890abcdef",
+            "sk-ant-api03-longtokenwithmanychars1234567890",
+            "sk-ant-api03-minlength",  # 正好10个字符
+        ]
+
+        for token in valid_tokens:
+            proxy = ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="",  # 空字符串，因为使用了auth_token
+                auth_token=token,
+            )
+            assert proxy.auth_token == token
+            assert proxy.get_auth_method() == "auth_token"
+
+    def test_invalid_auth_token_formats(self):
+        """测试无效的Auth令牌格式"""
+        # 太短的令牌
+        with pytest.raises(ValueError, match="Auth令牌长度至少为10个字符"):
+            ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="",
+                auth_token="short",
+            )
+
+        # 包含空白字符的令牌
+        with pytest.raises(ValueError, match="Auth令牌不能包含空白字符"):
+            ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="",
+                auth_token="sk-ant 123 456",
+            )
+
+        # None值应该是有效的（可选字段）
+        proxy = ProxyServer(
+            name="test",
+            base_url="https://api.example.com/",
+            api_key="sk-1234567890",
+            auth_token=None,
+        )
+        assert proxy.auth_token is None
+        assert proxy.get_auth_method() == "api_key"
+
+    def test_mutual_exclusivity_api_key_with_auth_token(self):
+        """测试API密钥和Auth令牌的互斥性"""
+        # 同时配置API密钥和Auth令牌应该失败
+        with pytest.raises(ValueError, match="不能同时配置api_key和auth_token"):
+            ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="sk-1234567890",
+                auth_token="sk-ant-api03-abcdef1234567890",
+            )
+
+        # API密钥非空时Auth令牌不能非空
+        with pytest.raises(ValueError, match="不能同时配置api_key和auth_token"):
+            ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="sk-1234567890",
+                auth_token="sk-ant-api03-abcdef1234567890",
+            )
+
+        # Auth令牌非空时API密钥不能非空
+        with pytest.raises(ValueError, match="不能同时配置api_key和auth_token"):
+            ProxyServer(
+                name="test",
+                base_url="https://api.example.com/",
+                api_key="sk-1234567890",
+                auth_token="sk-ant-api03-abcdef1234567890",
+            )
+
+    def test_auth_method_detection(self):
+        """测试认证方法检测"""
+        # 只有API密钥
+        proxy_api = ProxyServer(
+            name="test-api",
+            base_url="https://api.example.com/",
+            api_key="sk-1234567890",
+            auth_token=None,
+        )
+        assert proxy_api.get_auth_method() == "api_key"
+        assert proxy_api.get_active_credential() == "sk-1234567890"
+
+        # 只有Auth令牌
+        proxy_auth = ProxyServer(
+            name="test-auth",
+            base_url="https://api.example.com/",
+            api_key="",
+            auth_token="sk-ant-api03-abcdef1234567890",
+        )
+        assert proxy_auth.get_auth_method() == "auth_token"
+        assert proxy_auth.get_active_credential() == "sk-ant-api03-abcdef1234567890"
+
+        # 都没有配置
+        proxy_none = ProxyServer(
+            name="test-none",
+            base_url="https://api.example.com/",
+            api_key="",
+            auth_token=None,
+        )
+        assert proxy_none.get_auth_method() == "none"
+        assert proxy_none.get_active_credential() == ""
 
     def test_tags_validation(self):
         """测试标签验证和清理"""
@@ -327,8 +457,6 @@ class TestModelInteraction:
         proxy = ProxyServer(
             name="test", base_url="https://api.example.com/", api_key="sk-1234567890"
         )
-
-        original_time = proxy.updated_at
 
         # 修改代理（这会触发时间戳更新）
         proxy.description = "新的描述"

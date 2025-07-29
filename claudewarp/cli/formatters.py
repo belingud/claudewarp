@@ -35,6 +35,7 @@ def format_proxy_table(
     table.add_column("状态", style="", width=6, justify="center")
     table.add_column("名称", style="bold")
     table.add_column("URL", style="dim")
+    table.add_column("认证", style="yellow")
     table.add_column("描述", style="")
     table.add_column("标签", style="cyan")
     table.add_column("更新时间", style="dim")
@@ -53,6 +54,15 @@ def format_proxy_table(
         url_display = proxy.base_url
         if len(url_display) > 30:
             url_display = url_display[:27] + "..."
+
+        # 格式化认证方式
+        auth_method = proxy.get_auth_method()
+        if auth_method == "auth_token":
+            auth_display = "[yellow]Token[/yellow]"
+        elif auth_method == "api_key":
+            auth_display = "[cyan]API Key[/cyan]"
+        else:
+            auth_display = "[red]None[/red]"
 
         # 格式化标签
         tags_display = ", ".join(proxy.tags) if proxy.tags else "-"
@@ -74,6 +84,7 @@ def format_proxy_table(
             status,
             f"[{name_style}]{name}[/{name_style}]" if name_style else name,
             url_display,
+            auth_display,
             proxy.description or "-",
             tags_display,
             time_display,
@@ -114,10 +125,20 @@ def format_proxy_info(proxy: ProxyServer, detailed: bool = True) -> Panel:
         info_lines.append(f"[bold]小模型:[/bold] [yellow]{proxy.smallmodel}[/yellow]")
 
     if detailed:
+        # 认证信息
+        auth_method = proxy.get_auth_method()
+        if auth_method == "auth_token":
+            info_lines.append("[bold]认证方式:[/bold] [yellow]Auth Token[/yellow]")
+            info_lines.append(
+                f"[bold]Auth令牌:[/bold] {_mask_api_key(proxy.auth_token or '******')}"
+            )
+        else:
+            info_lines.append("[bold]认证方式:[/bold] [yellow]API Key[/yellow]")
+            info_lines.append(f"[bold]API密钥:[/bold] {_mask_api_key(proxy.api_key)}")
+
         # 详细信息
         info_lines.extend(
             [
-                f"[bold]API密钥:[/bold] {_mask_api_key(proxy.api_key)}",
                 f"[bold]创建时间:[/bold] {_format_datetime(proxy.created_at)}",
                 f"[bold]更新时间:[/bold] {_format_datetime(proxy.updated_at)}",
             ]
@@ -134,7 +155,7 @@ def format_proxy_info(proxy: ProxyServer, detailed: bool = True) -> Panel:
     )
 
 
-def format_export_output(export_content: str, shell_type: str) -> Panel:
+def format_export_output(export_content: str, shell_type: str) -> Syntax:
     """格式化环境变量导出输出
 
     Args:
@@ -142,7 +163,7 @@ def format_export_output(export_content: str, shell_type: str) -> Panel:
         shell_type: Shell类型
 
     Returns:
-        Panel: 格式化的面板
+        Syntax: 格式化的语法高亮文本
     """
     # 根据shell类型选择语法高亮
     syntax_map = {"bash": "bash", "fish": "fish", "powershell": "powershell", "zsh": "bash"}

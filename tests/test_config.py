@@ -11,14 +11,14 @@ from unittest.mock import patch
 import pytest
 import toml
 
-from core.config import CURRENT_CONFIG_VERSION, ConfigManager
-from core.exceptions import (
+from claudewarp.core.config import CURRENT_CONFIG_VERSION, ConfigManager
+from claudewarp.core.exceptions import (
     ConfigError,
     ConfigFileCorruptedError,
     ConfigPermissionError,
     ValidationError,
 )
-from core.models import ProxyConfig, ProxyServer
+from claudewarp.core.models import ProxyConfig, ProxyServer
 
 
 class TestConfigManager:
@@ -349,7 +349,7 @@ class TestConfigManagerMigration:
     def test_migrate_config_same_version(self, temp_config_manager_migration):
         """测试迁移相同版本的配置"""
         # 创建当前版本的配置
-        config = temp_config_manager_migration._create_default_config()
+        temp_config_manager_migration._create_default_config()
 
         result = temp_config_manager_migration.migrate_config()
         assert result is False  # 版本相同，无需迁移

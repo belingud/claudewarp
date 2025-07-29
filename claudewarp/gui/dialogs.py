@@ -85,12 +85,30 @@ class AddProxyDialog(QDialog):
         self.url_edit.setMinimumWidth(250)
         form_layout.addRow("代理URL *:", self.url_edit)
 
+        # 认证方式选择
+        auth_layout = QHBoxLayout()
+        self.api_key_radio = CheckBox("使用API密钥")
+        self.auth_token_radio = CheckBox("使用Auth令牌")
+        self.api_key_radio.setChecked(True)
+        auth_layout.addWidget(self.api_key_radio)
+        auth_layout.addWidget(self.auth_token_radio)
+        auth_layout.addStretch()
+        form_layout.addRow("认证方式 *:", auth_layout)
+
         # API密钥
         self.key_edit = LineEdit()
         self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.key_edit.setPlaceholderText("输入API密钥")
         self.key_edit.setMinimumWidth(250)
         form_layout.addRow("API密钥 *:", self.key_edit)
+
+        # Auth令牌
+        self.auth_token_edit = LineEdit()
+        self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.auth_token_edit.setPlaceholderText("输入Auth令牌")
+        self.auth_token_edit.setMinimumWidth(250)
+        self.auth_token_edit.setEnabled(False)
+        form_layout.addRow("Auth令牌 *:", self.auth_token_edit)
 
         # 显示密钥复选框
         self.show_key_check = CheckBox("显示密钥")
@@ -165,10 +183,15 @@ class AddProxyDialog(QDialog):
         # 显示/隐藏密钥
         self.show_key_check.toggled.connect(self.toggle_key_visibility)
 
+        # 认证方式切换
+        self.api_key_radio.toggled.connect(self.on_auth_method_changed)
+        self.auth_token_radio.toggled.connect(self.on_auth_method_changed)
+
         # 实时验证
         self.name_edit.textChanged.connect(self.validate_input)
         self.url_edit.textChanged.connect(self.validate_input)
         self.key_edit.textChanged.connect(self.validate_input)
+        self.auth_token_edit.textChanged.connect(self.validate_input)
 
         # 初始验证
         self.validate_input()
@@ -177,17 +200,37 @@ class AddProxyDialog(QDialog):
         """切换密钥显示状态"""
         if visible:
             self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
             self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
+            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+
+    def on_auth_method_changed(self, checked: bool):
+        """处理认证方式切换"""
+        sender = self.sender()
+        if checked:
+            if sender == self.api_key_radio:
+                self.key_edit.setEnabled(True)
+                self.auth_token_edit.setEnabled(False)
+                self.auth_token_radio.setChecked(False)
+            elif sender == self.auth_token_radio:
+                self.key_edit.setEnabled(False)
+                self.auth_token_edit.setEnabled(True)
+                self.api_key_radio.setChecked(False)
+        self.validate_input()
 
     def validate_input(self):
         """验证输入"""
         name = self.name_edit.text().strip()
         url = self.url_edit.text().strip()
         key = self.key_edit.text().strip()
+        auth_token = self.auth_token_edit.text().strip()
 
         # 检查必填字段
-        valid = bool(name and url and key)
+        if self.api_key_radio.isChecked():
+            valid = bool(name and url and key)
+        else:
+            valid = bool(name and url and auth_token)
 
         # 启用/禁用确定按钮
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
@@ -212,10 +255,18 @@ class AddProxyDialog(QDialog):
         tags_text = self.tags_edit.text().strip()
         tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
 
+        if self.api_key_radio.isChecked():
+            api_key = self.key_edit.text().strip()
+            auth_token = None
+        else:
+            api_key = None
+            auth_token = self.auth_token_edit.text().strip()
+
         return {
             "name": self.name_edit.text().strip(),
             "base_url": self.url_edit.text().strip(),
-            "api_key": self.key_edit.text().strip(),
+            "api_key": api_key,
+            "auth_token": auth_token,
             "description": self.desc_edit.text().strip(),
             "tags": tags,
             "is_active": self.active_check.isChecked(),
@@ -262,11 +313,26 @@ class EditProxyDialog(QDialog):
         self.url_edit.setMinimumWidth(250)
         form_layout.addRow("代理URL *:", self.url_edit)
 
+        # 认证方式选择
+        auth_layout = QHBoxLayout()
+        self.api_key_radio = CheckBox("使用API密钥")
+        self.auth_token_radio = CheckBox("使用Auth令牌")
+        auth_layout.addWidget(self.api_key_radio)
+        auth_layout.addWidget(self.auth_token_radio)
+        auth_layout.addStretch()
+        form_layout.addRow("认证方式 *:", auth_layout)
+
         # API密钥
         self.key_edit = LineEdit()
         self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
         self.key_edit.setMinimumWidth(250)
         form_layout.addRow("API密钥 *:", self.key_edit)
+
+        # Auth令牌
+        self.auth_token_edit = LineEdit()
+        self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.auth_token_edit.setMinimumWidth(250)
+        form_layout.addRow("Auth令牌 *:", self.auth_token_edit)
 
         # 显示密钥复选框
         self.show_key_check = CheckBox("显示密钥")
@@ -333,37 +399,75 @@ class EditProxyDialog(QDialog):
         # 显示/隐藏密钥
         self.show_key_check.toggled.connect(self.toggle_key_visibility)
 
+        # 认证方式切换
+        self.api_key_radio.toggled.connect(self.on_auth_method_changed)
+        self.auth_token_radio.toggled.connect(self.on_auth_method_changed)
+
         # 实时验证
         self.name_edit.textChanged.connect(self.validate_input)
         self.url_edit.textChanged.connect(self.validate_input)
         self.key_edit.textChanged.connect(self.validate_input)
+        self.auth_token_edit.textChanged.connect(self.validate_input)
 
     def load_proxy_data(self):
         """加载代理数据"""
         self.name_edit.setText(self.original_proxy.name)
         self.url_edit.setText(self.original_proxy.base_url)
         self.key_edit.setText(self.original_proxy.api_key)
+        self.auth_token_edit.setText(self.original_proxy.auth_token or "")
         self.desc_edit.setText(self.original_proxy.description)
         self.tags_edit.setText(", ".join(self.original_proxy.tags))
         self.active_check.setChecked(self.original_proxy.is_active)
         self.bigmodel_edit.setText(self.original_proxy.bigmodel or "")
         self.smallmodel_edit.setText(self.original_proxy.smallmodel or "")
 
+        # 设置认证方式
+        if self.original_proxy.auth_token:
+            self.auth_token_radio.setChecked(True)
+            self.api_key_radio.setChecked(False)
+            self.key_edit.setEnabled(False)
+            self.auth_token_edit.setEnabled(True)
+        else:
+            self.api_key_radio.setChecked(True)
+            self.auth_token_radio.setChecked(False)
+            self.key_edit.setEnabled(True)
+            self.auth_token_edit.setEnabled(False)
+
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
             self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
             self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
+            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+
+    def on_auth_method_changed(self, checked: bool):
+        """处理认证方式切换"""
+        sender = self.sender()
+        if checked:
+            if sender == self.api_key_radio:
+                self.key_edit.setEnabled(True)
+                self.auth_token_edit.setEnabled(False)
+                self.auth_token_radio.setChecked(False)
+            elif sender == self.auth_token_radio:
+                self.key_edit.setEnabled(False)
+                self.auth_token_edit.setEnabled(True)
+                self.api_key_radio.setChecked(False)
+        self.validate_input()
 
     def validate_input(self):
         """验证输入"""
         name = self.name_edit.text().strip()
         url = self.url_edit.text().strip()
         key = self.key_edit.text().strip()
+        auth_token = self.auth_token_edit.text().strip()
 
         # 检查必填字段
-        valid = bool(name and url and key)
+        if self.api_key_radio.isChecked():
+            valid = bool(name and url and key)
+        else:
+            valid = bool(name and url and auth_token)
 
         # 启用/禁用确定按钮
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
@@ -375,7 +479,7 @@ class EditProxyDialog(QDialog):
             update_data = self.get_update_data()
 
             # 创建临时对象验证数据
-            temp_data = self.original_proxy.dict()
+            temp_data = self.original_proxy.model_dump()
             temp_data.update(update_data)
             ProxyServer(**temp_data)
 
@@ -390,10 +494,18 @@ class EditProxyDialog(QDialog):
         tags_text = self.tags_edit.text().strip()
         tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
 
+        if self.api_key_radio.isChecked():
+            api_key = self.key_edit.text().strip()
+            auth_token = None
+        else:
+            api_key = None
+            auth_token = self.auth_token_edit.text().strip()
+
         return {
             "name": self.name_edit.text().strip(),
             "base_url": self.url_edit.text().strip(),
-            "api_key": self.key_edit.text().strip(),
+            "api_key": api_key,
+            "auth_token": auth_token,
             "description": self.desc_edit.text().strip(),
             "tags": tags,
             "is_active": self.active_check.isChecked(),

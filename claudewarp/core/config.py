@@ -282,6 +282,8 @@ class ConfigManager:
 
         except Exception as e:
             self.logger.error(f"解析配置数据失败: {e}")
+            import traceback
+            traceback.print_exc()
             raise ValidationError(f"配置数据格式错误: {e}") from None
 
     def _serialize_config(self, config: ProxyConfig) -> str:

@@ -1,16 +1,19 @@
 {
-    "env": {
-      "ANTHROPIC_API_KEY": "sk-xxx",
-      "ANTHROPIC_BASE_URL": "https://xxx.com",
-      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
-    },
-    "permissions": {
-      "allow": [
-        "Bash(rg:*)",
-        "Bash(uv run pytest:*)",
-        "Bash(find:*)",
-        "Bash(ls -la:*)"
-      ],
-      "deny": []
-    }
+  "env": {
+    "ANTHROPIC_API_KEY": "sk-xxx",
+    "ANTHROPIC_BASE_URL": "https://xxx.com",
+    "ANTHROPIC_MODEL": "claude-4-sonnet-20250415",
+    "ANTHROPIC_SMALL_FAST_MODEL": "claude-3.5-haiku",
+    "ANTHROPIC_AUTH_TOKEN": "sk-xxx",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1
+  },
+  "permissions": {
+    "allow": [
+      "Bash(rg:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(find:*)",
+      "Bash(ls -la:*)"
+    ],
+    "deny": []
   }
+}

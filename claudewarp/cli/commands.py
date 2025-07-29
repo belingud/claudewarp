@@ -25,7 +25,7 @@ from claudewarp.core.exceptions import (
     ValidationError,
 )
 from claudewarp.core.manager import ProxyManager
-from claudewarp.core.models import ExportFormat, ProxyServer
+from claudewarp.core.models import ExportFormat
 
 # 创建控制台对象
 console = Console()
@@ -108,11 +108,14 @@ def add(
     name: Optional[str] = typer.Option(None, "--name", "-n", help="代理名称"),
     url: Optional[str] = typer.Option(None, "--url", "-u", help="代理服务器URL"),
     key: Optional[str] = typer.Option(None, "--key", "-k", help="API密钥"),
+    auth_token: Optional[str] = typer.Option(
+        None, "--auth-token", help="Auth令牌（与API密钥互斥）"
+    ),
     description: Optional[str] = typer.Option("", "--desc", "-d", help="描述信息"),
     tags: Optional[str] = typer.Option(None, "--tags", "-t", help="标签列表，用逗号分隔"),
     bigmodel: Optional[str] = typer.Option(None, "--bigmodel", help="大模型名称"),
     smallmodel: Optional[str] = typer.Option(None, "--smallmodel", help="小模型名称"),
-    interactive: bool = typer.Option(True, "--interactive/--no-interactive", help="交互式输入"),
+    interactive: bool = typer.Option(True, "--interactive", "-i", help="交互式输入"),
 ):
     """添加新的代理服务器"""
 
@@ -126,12 +129,27 @@ def add(
 
             if name is None:
                 name = typer.prompt("代理名称")
+            if not name:
+                logger.error("代理名称是必需的")
+                raise typer.Exit(1)
 
             if url is None:
                 url = typer.prompt("代理服务器URL")
+            if not url:
+                logger.error("代理服务器URL是必需的")
+                raise typer.Exit(1)
 
             if key is None:
                 key = typer.prompt("API密钥", hide_input=True)
+            if not key and not auth_token:
+                logger.error("必须提供API密钥或Auth令牌")
+                raise typer.Exit(1)
+
+            if auth_token is None:
+                auth_token = (
+                    typer.prompt("Auth令牌（可选，与API密钥互斥）", hide_input=True, default="")
+                    or None
+                )
 
             if not description:
                 description = typer.prompt("描述信息", default="")
@@ -159,42 +177,44 @@ def add(
             if not url:
                 logger.error("代理服务器URL是必需的")
                 raise typer.Exit(1)
-            if not key:
-                logger.error("API密钥是必需的")
+            if not key and not auth_token:
+                logger.error("必须提供API密钥或Auth令牌")
                 raise typer.Exit(1)
 
             tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
 
-        # 创建代理对象
-        proxy = ProxyServer(
-            name=name,
-            base_url=url,
-            api_key=key,
-            description=description,
-            tags=tags_list,
-            bigmodel=bigmodel,
-            smallmodel=smallmodel,
-        )
-
         # 添加代理
         logger.info(f"添加代理: {name}")
+        assert name is not None, "Name should not be None"
+        assert url is not None, "URL should not be None"
+        assert description is not None, "Description should not be None"
+
+        # 处理互斥的认证方式
+        if auth_token:
+            api_key_to_use = ""
+        else:
+            api_key_to_use = key or ""
+
         manager.add_proxy(
-            name=proxy.name,
-            base_url=proxy.base_url,
-            api_key=proxy.api_key,
-            description=proxy.description,
-            tags=proxy.tags,
-            is_active=proxy.is_active,
-            bigmodel=proxy.bigmodel,
-            smallmodel=proxy.smallmodel,
+            name=name,
+            base_url=url,
+            api_key=api_key_to_use,
+            description=description,
+            tags=tags_list,
+            is_active=True,
+            bigmodel=bigmodel,
+            smallmodel=smallmodel,
+            auth_token=auth_token,
         )
 
-        console.print(format_success(f"代理 '{name}' 添加成功"))
         logger.info(f"代理 '{name}' 添加成功")
+
+        # 获取添加的代理以显示信息
+        added_proxy = manager.get_proxy(name)
 
         # 显示代理信息
         console.print()
-        console.print(format_proxy_info(proxy))
+        console.print(format_proxy_info(added_proxy))
 
     except (DuplicateProxyError, ValidationError) as e:
         logger.error(f"代理添加失败: {e}")
@@ -477,6 +497,9 @@ def edit(
     new_name: Optional[str] = typer.Option(None, "--name", help="新的代理名称"),
     url: Optional[str] = typer.Option(None, "--url", help="新的URL"),
     key: Optional[str] = typer.Option(None, "--key", help="新的API密钥"),
+    auth_token: Optional[str] = typer.Option(
+        None, "--auth-token", help="新的Auth令牌（与API密钥互斥）"
+    ),
     description: Optional[str] = typer.Option(None, "--desc", help="新的描述"),
     tags: Optional[str] = typer.Option(None, "--tags", help="新的标签列表，用逗号分隔"),
     bigmodel: Optional[str] = typer.Option(None, "--bigmodel", help="新的大模型名称"),
@@ -502,7 +525,39 @@ def edit(
             # 交互式编辑
             new_name = Prompt.ask("代理名称", default=proxy.name, console=console)
             url = Prompt.ask("代理服务器URL", default=proxy.base_url, console=console)
-            key = Prompt.ask("API密钥", default=proxy.api_key, console=console, password=True)
+
+            # 显示当前认证方式
+            current_auth = proxy.get_auth_method()
+            console.print(f"当前认证方式: {current_auth}")
+
+            # 询问认证方式
+            auth_method = Prompt.ask(
+                "选择认证方式",
+                choices=["api_key", "auth_token", "keep_current"],
+                default="keep_current",
+                console=console,
+            )
+
+            if auth_method == "api_key":
+                key = Prompt.ask(
+                    "API密钥",
+                    default=proxy.api_key if current_auth == "api_key" else "",
+                    console=console,
+                    password=True,
+                )
+                auth_token = None
+            elif auth_method == "auth_token":
+                key = None
+                auth_token = Prompt.ask(
+                    "Auth令牌",
+                    default=proxy.auth_token if current_auth == "auth_token" else "",
+                    console=console,
+                    password=True,
+                )
+            else:  # keep_current
+                key = proxy.api_key if current_auth == "api_key" else None
+                auth_token = proxy.auth_token if current_auth == "auth_token" else None
+
             description = Prompt.ask("描述信息", default=proxy.description, console=console)
             tags_input = Prompt.ask(
                 "标签 (用逗号分隔)", default=",".join(proxy.tags), console=console
@@ -521,8 +576,6 @@ def edit(
 
             if url:
                 update_kwargs["base_url"] = url
-            if key:
-                update_kwargs["api_key"] = key
             if description is not None:
                 update_kwargs["description"] = description
             if tags is not None:
@@ -534,6 +587,16 @@ def edit(
                 update_kwargs["smallmodel"] = smallmodel or None
             if enable is not None:
                 update_kwargs["is_active"] = enable
+
+            # 处理互斥的认证方式
+            if auth_token is not None:
+                update_kwargs["auth_token"] = auth_token
+                # 如果设置了auth_token，清空api_key
+                update_kwargs["api_key"] = ""
+            elif key is not None:
+                update_kwargs["api_key"] = key
+                # 如果设置了api_key，清空auth_token
+                update_kwargs["auth_token"] = None
 
             # 检查是否需要重命名
             if new_name and new_name != name:
@@ -562,6 +625,7 @@ def edit(
         update_kwargs = {
             "base_url": url,
             "api_key": key,
+            "auth_token": auth_token,
             "description": description,
             "tags": tags_list,
             "is_active": enable,
@@ -613,7 +677,7 @@ def search(
         manager = get_proxy_manager()
 
         # 解析搜索字段
-        search_fields = [field.strip() for field in fields.split(",")]
+        search_fields = [field.strip() for field in (fields or "name,description,tags").split(",")]
 
         # 执行搜索
         results = manager.search_proxies(query, search_fields)

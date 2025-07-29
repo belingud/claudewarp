@@ -171,7 +171,8 @@ class APIKeyError(NetworkError):
     """API密钥错误"""
 
     def __init__(self, message: str = "API密钥无效或已过期"):
-        super().__init__(message, error_code="API_KEY_ERROR")
+        super().__init__(message)
+        self.error_code = "API_KEY_ERROR"
 
 
 class ProxyConnectionError(NetworkError):
@@ -182,7 +183,8 @@ class ProxyConnectionError(NetworkError):
         if reason:
             message += f" - {reason}"
 
-        super().__init__(message, url=url, error_code="PROXY_CONNECTION_ERROR")
+        super().__init__(message, url=url)
+        self.error_code = "PROXY_CONNECTION_ERROR"
         self.proxy_name = proxy_name
         self.details["proxy_name"] = proxy_name
 
@@ -249,7 +251,8 @@ class DiskSpaceError(SystemError):
         if required_space:
             message += f" (需要 {required_space} 字节)"
 
-        super().__init__(message, error_code="DISK_SPACE_ERROR")
+        super().__init__(message)
+        self.error_code = "DISK_SPACE_ERROR"
         self.path = path
         self.required_space = required_space
         self.details["path"] = path
@@ -261,7 +264,8 @@ class PermissionError(SystemError):
     """权限错误"""
 
     def __init__(self, path: str, operation: str = "访问"):
-        super().__init__(f"权限不足，无法{operation}: {path}", error_code="PERMISSION_ERROR")
+        super().__init__(f"权限不足，无法{operation}: {path}")
+        self.error_code = "PERMISSION_ERROR"
         self.path = path
         self.operation = operation
         self.details["path"] = path

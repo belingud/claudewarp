@@ -7,11 +7,10 @@ CLI功能测试
 import tempfile
 import json
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 import pytest
 from typer.testing import CliRunner
-from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
@@ -28,7 +27,6 @@ from claudewarp.cli.formatters import (
 from claudewarp.cli.main import main, cli_main, setup_colored_logging
 from claudewarp.core.config import ConfigManager
 from claudewarp.core.exceptions import (
-    ClaudeWarpError,
     DuplicateProxyError,
     ProxyNotFoundError,
     ValidationError,
@@ -36,7 +34,7 @@ from claudewarp.core.exceptions import (
     NetworkError,
 )
 from claudewarp.core.manager import ProxyManager
-from claudewarp.core.models import ProxyServer, ExportFormat
+from claudewarp.core.models import ProxyServer
 
 
 class TestCLICommands:
@@ -1354,7 +1352,7 @@ class TestImportExportCommand:
             mock_manager = Mock(spec=ProxyManager)
             mock_get_manager.return_value = mock_manager
 
-            result = runner.invoke(app, ["import", "test.json", "--merge", "replace"])
+            runner.invoke(app, ["import", "test.json", "--merge", "replace"])
 
             mock_manager.import_config.assert_called_with("test.json", merge_strategy="replace")
 
@@ -1364,7 +1362,7 @@ class TestVerboseLogging:
 
     def test_verbose_flag_enables_debug_logging(self, runner):
         """测试verbose标志启用调试日志"""
-        result = runner.invoke(app, ["--verbose", "list"])
+        runner.invoke(app, ["--verbose", "list"])
 
         # 检查是否启用了详细日志输出
         # 这里主要测试命令能够正常执行，实际的日志级别检查需要更复杂的设置

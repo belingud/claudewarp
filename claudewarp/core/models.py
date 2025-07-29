@@ -6,10 +6,10 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Self
 
-from pydantic import BaseModel, Field, validator
-
+from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic_core.core_schema import ValidationInfo
 
 class ProxyServer(BaseModel):
     """代理服务器配置模型
@@ -21,7 +21,7 @@ class ProxyServer(BaseModel):
         ..., min_length=1, max_length=50, description="代理服务器名称，用于标识和选择"
     )
     base_url: str = Field(..., description="代理服务器的基础URL，必须是有效的HTTP/HTTPS地址")
-    api_key: str = Field(..., min_length=3, description="API密钥，用于身份验证")
+    api_key: Optional[str] = Field(default=None, min_length=3, description="API密钥，用于身份验证")
     description: str = Field(default="", max_length=200, description="代理服务器的描述信息")
     tags: List[str] = Field(default_factory=list, description="标签列表，用于分类和筛选")
     created_at: str = Field(
@@ -33,15 +33,17 @@ class ProxyServer(BaseModel):
     is_active: bool = Field(default=True, description="是否启用该代理服务器")
     bigmodel: Optional[str] = Field(default=None, description="大模型名称")
     smallmodel: Optional[str] = Field(default=None, description="小模型名称")
-
-    @validator("name")
+    auth_token: Optional[str] = Field(
+        default=None, min_length=3, description="Auth令牌，用于身份验证（与api_key互斥）"
+    )
+    @field_validator("name")
     def validate_name(cls, v: str) -> str:
         """验证代理名称格式"""
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
             raise ValueError("代理名称只能包含字母、数字、下划线和横线")
         return v
 
-    @validator("base_url")
+    @field_validator("base_url")
     def validate_base_url(cls, v: str) -> str:
         """验证和规范化base_url"""
         # 检查URL格式
@@ -68,38 +70,41 @@ class ProxyServer(BaseModel):
 
         return v
 
-    @validator("api_key")
-    def validate_api_key(cls, v: str) -> str:
-        """验证API密钥格式"""
-        # 移除首尾空白
-        v = v.strip()
-
-        # 检查最小长度
-        if len(v) < 10:
-            raise ValueError("API密钥长度至少为10个字符")
-
-        # 检查是否包含空白字符
-        if re.search(r"\s", v):
-            raise ValueError("API密钥不能包含空白字符")
-
-        return v
-
-    @validator("tags")
+    @field_validator("tags")
     def validate_tags(cls, v: List[str]) -> List[str]:
         """验证标签列表"""
-        # 移除重复标签和空标签
-        cleaned_tags = []
-        for tag in v:
-            if isinstance(tag, str):
-                tag = tag.strip()
-                if tag and tag not in cleaned_tags:
-                    cleaned_tags.append(tag)
-        return cleaned_tags
+        return list(set(i.strip() for i in v))
 
-    @validator("updated_at", always=True)
+    @field_validator("updated_at")
     def update_timestamp(cls, v: str, values: dict) -> str:
         """自动更新时间戳"""
         return datetime.now().isoformat()
+    
+    @model_validator(mode="after")
+    def api_key_or_auth_token(cls, values: Self) -> Self:
+        """确保api_key或auth_token至少有一个"""
+        if values.api_key and values.auth_token:
+            raise ValueError("api_key或auth_token只能存在一个")
+        if not values.api_key and not values.auth_token:
+            raise ValueError("api_key或auth_token至少有一个必须存在")
+        return values
+
+    def get_auth_method(self) -> str:
+        """获取当前使用的认证方法"""
+        if self.auth_token:
+            return "auth_token"
+        elif self.api_key:
+            return "api_key"
+        else:
+            return "none"
+
+    def get_active_credential(self) -> Optional[str]:
+        """获取当前活跃的认证凭据"""
+        if self.auth_token:
+            return self.auth_token
+        elif self.api_key:
+            return self.api_key
+        return None
 
     class Config:
         """Pydantic配置"""
@@ -120,7 +125,17 @@ class ProxyServer(BaseModel):
                 "description": "国内主力节点",
                 "tags": ["china", "primary"],
                 "is_active": True,
-            }
+            },
+            "examples": [
+                {
+                    "name": "proxy-auth",
+                    "base_url": "https://api.claude-proxy.com/",
+                    "auth_token": "sk-ant-api03-abcdef123456",
+                    "description": "使用Auth令牌的代理",
+                    "tags": ["auth", "primary"],
+                    "is_active": True,
+                }
+            ],
         }
 
 
@@ -143,16 +158,16 @@ class ProxyConfig(BaseModel):
         default_factory=lambda: datetime.now().isoformat(), description="配置最后更新时间"
     )
 
-    @validator("current_proxy")
-    def validate_current_proxy(cls, v: Optional[str], values: dict) -> Optional[str]:
+    @field_validator("current_proxy")
+    def validate_current_proxy(cls, v: Optional[str], values: ValidationInfo) -> Optional[str]:
         """验证当前代理是否存在于代理列表中"""
-        if v is not None and "proxies" in values:
-            proxies = values["proxies"]
+        if v is not None and "proxies" in values.data:
+            proxies = values.data["proxies"]
             if v not in proxies:
                 raise ValueError(f'当前代理 "{v}" 不存在于代理列表中')
         return v
 
-    @validator("proxies")
+    @field_validator("proxies")
     def validate_proxies(cls, v: Dict[str, ProxyServer]) -> Dict[str, ProxyServer]:
         """验证代理字典的一致性"""
         for name, proxy in v.items():
@@ -162,7 +177,7 @@ class ProxyConfig(BaseModel):
                 )
         return v
 
-    @validator("updated_at", always=True)
+    @field_validator("updated_at")
     def update_timestamp(cls, v: str, values: dict) -> str:
         """自动更新时间戳"""
         return datetime.now().isoformat()
@@ -247,7 +262,7 @@ class ExportFormat(BaseModel):
     prefix: str = Field(default="ANTHROPIC_", description="环境变量前缀")
     export_all: bool = Field(default=False, description="是否导出所有代理（默认只导出当前代理）")
 
-    @validator("shell_type")
+    @field_validator("shell_type")
     def validate_shell_type(cls, v: str) -> str:
         """验证Shell类型"""
         valid_shells = {"bash", "fish", "powershell", "zsh"}
@@ -256,7 +271,7 @@ class ExportFormat(BaseModel):
             raise ValueError(f"不支持的Shell类型: {v}. 支持的类型: {', '.join(valid_shells)}")
         return v
 
-    @validator("prefix")
+    @field_validator("prefix")
     def validate_prefix(cls, v: str) -> str:
         """验证环境变量前缀"""
         if not re.match(r"^[A-Z_][A-Z0-9_]*$", v):

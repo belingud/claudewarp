@@ -9,6 +9,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
+try:
+    import winreg  # type: ignore
+except ImportError:
+    winreg = None
+
 from PySide6.QtCore import QObject, QSettings, QTimer, Signal
 from PySide6.QtWidgets import QApplication
 
@@ -222,15 +227,17 @@ class ThemeManager(QObject):
 
             elif system == "windows":  # Windows
                 try:
-                    import winreg
-
-                    registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-                    key = winreg.OpenKey(
-                        registry, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-                    )
-                    value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-                    winreg.CloseKey(key)
-                    theme = "light" if value else "dark"
+                    if winreg is not None:
+                        registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)  # type: ignore
+                        key = winreg.OpenKey(  # type: ignore
+                            registry,
+                            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                        )
+                        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")  # type: ignore
+                        winreg.CloseKey(key)  # type: ignore
+                        theme = "light" if value else "dark"
+                    else:
+                        theme = "light"  # fallback
                     self.logger.debug(f"Windows 系统检测到主题: {theme}")
                     return theme
                 except Exception as e:

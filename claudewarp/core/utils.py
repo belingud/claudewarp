@@ -35,7 +35,7 @@ class LevelAlignFilter:
 
     def filter(self, record):
         # 原始 level 名
-        name = self.LEVEL_MAP.get(record.levelname, record.levelname)
+        name = self.LEVEL_MAP.get(record.levelname, record.levelname or "UNKNOWN")
         # 构造固定宽度的前缀
         record.levelname_padded = f"[{name}]{' ' * (self.WIDTH - len(name) - 2)}"
         return True
@@ -229,7 +229,7 @@ def get_file_size(file_path: Union[str, Path]) -> int:
         return 0
 
 
-def get_disk_usage(path: Union[str, Path]) -> Dict[str, int]:
+def get_disk_usage(path: Union[str, Path]) -> Dict[str, Union[int, float]]:
     """获取磁盘使用情况
 
     Args:
@@ -475,7 +475,7 @@ def run_command(
         }
 
 
-def format_file_size(size_bytes: int) -> str:
+def format_file_size(size_bytes: Union[int, float]) -> str:
     """格式化文件大小
 
     Args:

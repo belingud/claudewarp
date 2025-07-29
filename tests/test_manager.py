@@ -10,15 +10,15 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from core.config import ConfigManager
-from core.exceptions import (
+from claudewarp.core.config import ConfigManager
+from claudewarp.core.exceptions import (
     ConfigError,
     DuplicateProxyError,
     ProxyNotFoundError,
     ValidationError,
 )
-from core.manager import ProxyManager
-from core.models import ExportFormat, ProxyConfig, ProxyServer
+from claudewarp.core.manager import ProxyManager
+from claudewarp.core.models import ExportFormat, ProxyConfig, ProxyServer
 
 
 class TestProxyManager:

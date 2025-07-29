@@ -6,6 +6,7 @@
 """
 
 import logging
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -18,7 +19,7 @@ from .exceptions import (
     ProxyNotFoundError,
     ValidationError,
 )
-from .models import ExportFormat, ProxyServer
+from .models import ExportFormat, ProxyConfig, ProxyServer
 
 
 class ProxyManager:
@@ -47,7 +48,13 @@ class ProxyManager:
         self._config = None
         self._load_config()
 
-    def _load_config(self) -> None:
+    @property
+    def config(self) -> ProxyConfig:
+        if self._config is None:
+            self._load_config()
+        return self._config  # type: ignore
+
+    def _load_config(self) -> ProxyConfig:
         """加载配置文件
 
         Raises:
@@ -56,6 +63,7 @@ class ProxyManager:
         try:
             self._config = self.config_manager.load_config()
             self.logger.debug(f"已加载配置，包含 {len(self._config.proxies)} 个代理服务器")
+            return self._config
         except Exception as e:
             self.logger.error(f"加载配置失败: {e}")
             raise ConfigError(f"初始化代理管理器失败: {e}") from None
@@ -67,7 +75,7 @@ class ProxyManager:
             ConfigError: 配置保存失败
         """
         try:
-            success = self.config_manager.save_config(self._config)
+            success = self.config_manager.save_config(self.config)
             if not success:
                 raise ConfigError("保存配置文件失败")
             self.logger.debug("配置已保存")
@@ -86,6 +94,7 @@ class ProxyManager:
         set_as_current: bool = False,
         bigmodel: Optional[str] = None,
         smallmodel: Optional[str] = None,
+        auth_token: Optional[str] = None,
     ) -> ProxyServer:
         """添加新的代理服务器
 
@@ -99,6 +108,7 @@ class ProxyManager:
             set_as_current: 是否设置为当前代理
             bigmodel: 大模型名称
             smallmodel: 小模型名称
+            auth_token: Auth令牌（与api_key互斥）
 
         Returns:
             ProxyServer: 添加的代理服务器对象
@@ -109,7 +119,7 @@ class ProxyManager:
             ConfigError: 配置操作失败
         """
         # 检查重复
-        if name in self._config.proxies:
+        if name in self.config.proxies:
             raise DuplicateProxyError(name)
 
         try:
@@ -123,14 +133,15 @@ class ProxyManager:
                 is_active=is_active,
                 bigmodel=bigmodel,
                 smallmodel=smallmodel,
+                auth_token=auth_token,
             )
 
             # 添加到配置
-            self._config.add_proxy(proxy)
+            self.config.add_proxy(proxy)
 
             # 如果需要设置为当前代理
             if set_as_current:
-                self._config.set_current_proxy(name)
+                self.config.set_current_proxy(name)
 
             # 保存配置
             self._save_config()
@@ -160,12 +171,12 @@ class ProxyManager:
             ProxyNotFoundError: 代理服务器不存在
             ConfigError: 配置操作失败
         """
-        if name not in self._config.proxies:
+        if name not in self.config.proxies:
             raise ProxyNotFoundError(name)
 
         try:
             # 删除代理
-            success = self._config.remove_proxy(name)
+            success = self.config.remove_proxy(name)
 
             if success:
                 # 保存配置
@@ -193,10 +204,10 @@ class ProxyManager:
             ValidationError: 代理服务器未启用
             ConfigError: 配置操作失败
         """
-        if name not in self._config.proxies:
+        if name not in self.config.proxies:
             raise ProxyNotFoundError(name)
 
-        proxy = self._config.proxies[name]
+        proxy = self.config.proxies[name]
 
         # 检查代理是否启用
         if not proxy.is_active:
@@ -204,7 +215,7 @@ class ProxyManager:
 
         try:
             # 设置当前代理
-            success = self._config.set_current_proxy(name)
+            success = self.config.set_current_proxy(name)
 
             if success:
                 # 保存配置
@@ -233,7 +244,7 @@ class ProxyManager:
         Returns:
             Optional[ProxyServer]: 当前代理服务器，如果没有则返回None
         """
-        return self._config.get_current_proxy()
+        return self.config.get_current_proxy()
 
     def get_proxy(self, name: str) -> ProxyServer:
         """获取指定的代理服务器
@@ -247,10 +258,10 @@ class ProxyManager:
         Raises:
             ProxyNotFoundError: 代理服务器不存在
         """
-        if name not in self._config.proxies:
+        if name not in self.config.proxies:
             raise ProxyNotFoundError(name)
 
-        return self._config.proxies[name]
+        return self.config.proxies[name]
 
     def list_proxies(self, active_only: bool = False) -> Dict[str, ProxyServer]:
         """获取代理服务器列表
@@ -262,9 +273,9 @@ class ProxyManager:
             Dict[str, ProxyServer]: 代理服务器字典
         """
         if active_only:
-            return self._config.get_active_proxies()
+            return self.config.get_active_proxies()
         else:
-            return self._config.proxies.copy()
+            return self.config.proxies.copy()
 
     def get_proxy_names(self, active_only: bool = False) -> List[str]:
         """获取代理服务器名称列表
@@ -276,9 +287,9 @@ class ProxyManager:
             List[str]: 代理服务器名称列表
         """
         if active_only:
-            return list(self._config.get_active_proxies().keys())
+            return list(self.config.get_active_proxies().keys())
         else:
-            return self._config.get_proxy_names()
+            return self.config.get_proxy_names()
 
     def update_proxy(
         self,
@@ -290,6 +301,7 @@ class ProxyManager:
         is_active: Optional[bool] = None,
         bigmodel: Optional[str] = None,
         smallmodel: Optional[str] = None,
+        auth_token: Optional[str] = None,
     ) -> ProxyServer:
         """更新代理服务器信息
 
@@ -302,6 +314,7 @@ class ProxyManager:
             is_active: 新的启用状态（可选）
             bigmodel: 新的大模型名称（可选）
             smallmodel: 新的小模型名称（可选）
+            auth_token: 新的Auth令牌（可选，与api_key互斥）
 
         Returns:
             ProxyServer: 更新后的代理服务器对象
@@ -311,17 +324,16 @@ class ProxyManager:
             ValidationError: 数据验证失败
             ConfigError: 配置操作失败
         """
-        if name not in self._config.proxies:
+        if name not in self.config.proxies:
             raise ProxyNotFoundError(name)
 
         try:
-            proxy = self._config.proxies[name]
+            proxy = self.config.proxies[name]
 
             # 准备更新数据
             update_data = {
                 "name": name,
                 "base_url": base_url if base_url is not None else proxy.base_url,
-                "api_key": api_key if api_key is not None else proxy.api_key,
                 "description": description if description is not None else proxy.description,
                 "tags": tags if tags is not None else proxy.tags,
                 "is_active": is_active if is_active is not None else proxy.is_active,
@@ -330,23 +342,37 @@ class ProxyManager:
                 "created_at": proxy.created_at,  # 保持原创建时间
             }
 
+            # 处理互斥的认证方式
+            if auth_token is not None:
+                # 如果设置了auth_token，则清空api_key
+                update_data["auth_token"] = auth_token
+                update_data["api_key"] = None
+            elif api_key is not None:
+                # 如果设置了api_key，则清空auth_token
+                update_data["api_key"] = api_key
+                update_data["auth_token"] = None
+            else:
+                # 保持原来的认证方式
+                update_data["api_key"] = proxy.api_key
+                update_data["auth_token"] = proxy.auth_token
+
             # 创建新的代理对象（会自动进行数据验证和更新时间戳）
             updated_proxy = ProxyServer(**update_data)
 
             # 更新配置
-            self._config.proxies[name] = updated_proxy
+            self.config.proxies[name] = updated_proxy
 
             # 如果代理被禁用且是当前代理，需要切换到其他代理
-            if is_active is False and self._config.current_proxy == name:
-                active_proxies = self._config.get_active_proxies()
+            if is_active is False and self.config.current_proxy == name:
+                active_proxies = self.config.get_active_proxies()
                 if active_proxies:
                     # 切换到第一个可用的代理
                     new_current = next(iter(active_proxies))
-                    self._config.set_current_proxy(new_current)
+                    self.config.set_current_proxy(new_current)
                     self.logger.info(f"代理 '{name}' 被禁用，已自动切换到 '{new_current}'")
                 else:
                     # 没有可用代理，清空当前代理
-                    self._config.current_proxy = None
+                    self.config.current_proxy = None
                     self.logger.warning(f"代理 '{name}' 被禁用且无其他可用代理")
 
             # 保存配置
@@ -386,9 +412,9 @@ class ProxyManager:
             # 确定要导出的代理
             if proxy_name:
                 # 使用指定的代理
-                if proxy_name not in self._config.proxies:
+                if proxy_name not in self.config.proxies:
                     raise ProxyNotFoundError(proxy_name)
-                proxy = self._config.proxies[proxy_name]
+                proxy = self.config.proxies[proxy_name]
             else:
                 # 使用当前代理
                 proxy = self.get_current_proxy()
@@ -429,49 +455,66 @@ class ProxyManager:
             lines.append(f"{comment_char} Claude 中转站环境变量")
             lines.append(f"{comment_char} 代理名称: {proxy.name}")
             lines.append(f"{comment_char} 代理URL: {proxy.base_url}")
+            lines.append(f"{comment_char} 认证方式: {proxy.get_auth_method()}")
             if proxy.description:
                 lines.append(f"{comment_char} 描述: {proxy.description}")
             lines.append("")
 
         # 生成环境变量
         base_url_var = f"{export_format.prefix}API_BASE_URL"
-        api_key_var = f"{export_format.prefix}API_KEY"
+
+        # 根据认证方式选择要导出的凭据
+        auth_method = proxy.get_auth_method()
+        if auth_method == "auth_token":
+            auth_var = f"{export_format.prefix}AUTH_TOKEN"
+            auth_value = proxy.auth_token
+        else:
+            auth_var = f"{export_format.prefix}API_KEY"
+            auth_value = proxy.api_key
 
         if export_format.shell_type == "powershell":
             # PowerShell格式
             lines.append(f'$env:{base_url_var} = "{proxy.base_url}"')
-            lines.append(f'$env:{api_key_var} = "{proxy.api_key}"')
+            lines.append(f'$env:{auth_var} = "{auth_value}"')
         elif export_format.shell_type == "fish":
             # Fish shell格式
             lines.append(f'set -gx {base_url_var} "{proxy.base_url}"')
-            lines.append(f'set -gx {api_key_var} "{proxy.api_key}"')
+            lines.append(f'set -gx {auth_var} "{auth_value}"')
         else:
             # Bash/Zsh格式（默认）
             lines.append(f'export {base_url_var}="{proxy.base_url}"')
-            lines.append(f'export {api_key_var}="{proxy.api_key}"')
+            lines.append(f'export {auth_var}="{auth_value}"')
 
         # 如果需要导出所有代理
-        if export_format.export_all and len(self._config.proxies) > 1:
+        if export_format.export_all and len(self.config.proxies) > 1:
             lines.append("")
             if export_format.include_comments:
                 comment_char = "#" if export_format.shell_type != "powershell" else "#"
                 lines.append(f"{comment_char} 所有可用代理")
 
-            for name, p in self._config.proxies.items():
+            for name, p in self.config.proxies.items():
                 if name != proxy.name:  # 跳过当前代理
                     safe_name = name.upper().replace("-", "_").replace(".", "_")
                     url_var = f"{export_format.prefix}{safe_name}_API_BASE_URL"
-                    key_var = f"{export_format.prefix}{safe_name}_API_KEY"
+
+                    # 根据认证方式选择要导出的凭据
+                    p_auth_method = p.get_auth_method()
+                    if p_auth_method == "auth_token":
+                        p_auth_var = f"{export_format.prefix}{safe_name}_AUTH_TOKEN"
+                        p_auth_value = p.auth_token
+                    else:
+                        p_auth_var = f"{export_format.prefix}{safe_name}_API_KEY"
+                        p_auth_value = p.api_key
 
                     if export_format.shell_type == "powershell":
                         lines.append(f'$env:{url_var} = "{p.base_url}"')
-                        lines.append(f'$env:{key_var} = "{p.api_key}"')
+                        lines.append(f'$env:{p_auth_var} = "{p_auth_value}"')
                     elif export_format.shell_type == "fish":
                         lines.append(f'set -gx {url_var} "{p.base_url}"')
-                        lines.append(f'set -gx {key_var} "{p.api_key}"')
+                        lines.append(f'set -gx {p_auth_var} = "{p_auth_value}"')
                     else:
                         lines.append(f'export {url_var}="{p.base_url}"')
-                        lines.append(f'export {key_var}="{p.api_key}"')
+                        lines.append(f'export {p_auth_var}="{p_auth_value}"')
 
         return "\n".join(lines)
 
@@ -482,14 +525,14 @@ class ProxyManager:
             Dict[str, Any]: 状态信息字典
         """
         current_proxy = self.get_current_proxy()
-        active_proxies = self._config.get_active_proxies()
+        active_proxies = self.config.get_active_proxies()
 
         return {
-            "total_proxies": len(self._config.proxies),
+            "total_proxies": len(self.config.proxies),
             "active_proxies": len(active_proxies),
             "current_proxy": current_proxy.name if current_proxy else None,
-            "config_version": self._config.version,
-            "config_updated_at": self._config.updated_at,
+            "config_version": self.config.version,
+            "config_updated_at": self.config.updated_at,
             "config_info": self.config_manager.get_config_info(),
         }
 
@@ -508,10 +551,10 @@ class ProxyManager:
         Note:
             这是一个占位方法，具体的连接测试需要在后续版本中实现
         """
-        if name not in self._config.proxies:
+        if name not in self.config.proxies:
             raise ProxyNotFoundError(name)
 
-        proxy = self._config.proxies[name]
+        proxy = self.config.proxies[name]
 
         # TODO: 实现真实的连接测试
         return {
@@ -540,7 +583,7 @@ class ProxyManager:
         query = query.lower()
         results = {}
 
-        for name, proxy in self._config.proxies.items():
+        for name, proxy in self.config.proxies.items():
             match = False
 
             # 搜索名称
@@ -579,7 +622,7 @@ class ProxyManager:
         results = {}
         tag = tag.lower()
 
-        for name, proxy in self._config.proxies.items():
+        for name, proxy in self.config.proxies.items():
             if any(tag in t.lower() for t in proxy.tags):
                 results[name] = proxy
 
@@ -601,9 +644,9 @@ class ProxyManager:
         try:
             # 确定要应用的代理
             if proxy_name:
-                if proxy_name not in self._config.proxies:
+                if proxy_name not in self.config.proxies:
                     raise ProxyNotFoundError(proxy_name)
-                proxy = self._config.proxies[proxy_name]
+                proxy = self.config.proxies[proxy_name]
             else:
                 proxy = self.get_current_proxy()
                 if proxy is None:
@@ -625,8 +668,6 @@ class ProxyManager:
             existing_config = {}
             if setting_file.exists():
                 try:
-                    import json
-
                     with open(setting_file, "r", encoding="utf-8") as f:
                         existing_config = json.load(f)
                     self.logger.debug(f"已读取现有配置文件: {setting_file}")
@@ -643,9 +684,6 @@ class ProxyManager:
 
             # 合并配置
             merged_config = self._merge_claude_code_config(existing_config, proxy)
-
-            # 写入配置文件
-            import json
 
             from .utils import atomic_write
 
@@ -697,18 +735,34 @@ class ProxyManager:
         if "env" not in merged_config:
             merged_config["env"] = {}
 
-        # 更新代理相关的环境变量
-        merged_config["env"]["ANTHROPIC_API_KEY"] = proxy.api_key
+        # 根据认证方式选择要设置的环境变量
+        auth_method = proxy.get_auth_method()
+
+        # 清除可能存在的认证环境变量，确保互斥性
+        merged_config["env"].pop("ANTHROPIC_API_KEY", None)
+        merged_config["env"].pop("ANTHROPIC_AUTH_TOKEN", None)
+
+        # 设置对应的认证环境变量
+        if auth_method == "auth_token":
+            merged_config["env"]["ANTHROPIC_AUTH_TOKEN"] = proxy.auth_token
+        else:
+            merged_config["env"]["ANTHROPIC_API_KEY"] = proxy.api_key
+
+        # 设置基础URL
         merged_config["env"]["ANTHROPIC_BASE_URL"] = proxy.base_url
         merged_config["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = 1
 
         # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
         if proxy.bigmodel:
             merged_config["env"]["ANTHROPIC_MODEL"] = proxy.bigmodel
+        else:
+            merged_config["env"].pop("ANTHROPIC_MODEL", None)
 
         # 如果配置了小模型，添加 ANTHROPIC_SMALL_FAST_MODEL 环境变量
         if proxy.smallmodel:
             merged_config["env"]["ANTHROPIC_SMALL_FAST_MODEL"] = proxy.smallmodel
+        else:
+            merged_config["env"].pop("ANTHROPIC_SMALL_FAST_MODEL", None)
 
         # 如果原配置中没有 permissions 字段，添加默认值
         if "permissions" not in merged_config:
@@ -725,11 +779,21 @@ class ProxyManager:
         Returns:
             Dict[str, Any]: Claude Code 配置字典
         """
-        env_config = {
-            "ANTHROPIC_API_KEY": proxy.api_key,
-            "ANTHROPIC_BASE_URL": proxy.base_url,
-            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
-        }
+        # 根据认证方式选择要设置的环境变量
+        auth_method = proxy.get_auth_method()
+
+        if auth_method == "auth_token":
+            env_config = {
+                "ANTHROPIC_AUTH_TOKEN": proxy.auth_token,
+                "ANTHROPIC_BASE_URL": proxy.base_url,
+                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
+            }
+        else:
+            env_config = {
+                "ANTHROPIC_API_KEY": proxy.api_key,
+                "ANTHROPIC_BASE_URL": proxy.base_url,
+                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
+            }
 
         # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
         if proxy.bigmodel:

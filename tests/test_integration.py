@@ -3,6 +3,7 @@
 
 测试整个应用程序的集成功能和端到端工作流程。
 """
+# ruff: noqa: E401
 
 import sys
 import tempfile
@@ -10,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from core.config import ConfigManager
-from core.manager import ProxyManager
-from core.models import ProxyServer
+from claudewarp.core.config import ConfigManager
+from claudewarp.core.manager import ProxyManager
+from claudewarp.core.models import ProxyServer
 
 
 class TestApplicationIntegration:
@@ -342,8 +343,8 @@ class TestSystemRequirements:
 
         # Rich依赖（CLI美化）
         try:
-            from rich.console import Console
-            from rich.table import Table
+            from rich.console import Console  # noqa: F401
+            from rich.table import Table  # noqa: F401
 
             rich_available = True
         except ImportError:
@@ -351,7 +352,7 @@ class TestSystemRequirements:
 
         # Typer依赖（CLI框架）
         try:
-            import typer
+            import typer  # noqa: F401
 
             typer_available = True
         except ImportError:
