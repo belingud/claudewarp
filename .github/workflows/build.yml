@@ -124,15 +124,32 @@ jobs:
                 ^zip -r $"../($zip_name)" ClaudeWarp.app
                 cd ..
                 
-                # Create DMG
+                # Create DMG - 确保目标文件不存在
                 let dmg_name = $"ClaudeWarp-($version)-macos-($arch).dmg"
+                print $"Creating DMG: ($dmg_name)"
+                
+                # 清理可能存在的旧文件
+                if ($dmg_name | path exists) {
+                  ^rm -f $dmg_name
+                }
+                if ("dmg-temp" | path exists) {
+                  ^rm -rf dmg-temp
+                }
+                
                 ^mkdir -p dmg-temp
                 ^cp -R dist/ClaudeWarp.app dmg-temp/
+                
                 try {
-                  ^create-dmg --volname "ClaudeWarp" --window-pos 200 120 --window-size 600 300 --icon-size 100 --icon "ClaudeWarp.app" 175 120 --hide-extension "ClaudeWarp.app" --app-drop-link 425 120 --no-internet-enable $dmg_name "dmg-temp"
+                  ^create-dmg --volname "ClaudeWarp" --window-pos 200 120 --window-size 600 300 --icon-size 100 --icon "ClaudeWarp.app" 175 120 --hide-extension "ClaudeWarp.app" --app-drop-link 425 120 --no-internet-enable --skip-jenkins $dmg_name "dmg-temp"
+                  print $"✅ DMG created successfully: ($dmg_name)"
+                  ^ls -al
                 } catch {
                   print "⚠️ DMG creation failed, but ZIP is available"
+                  ^ls -al
+                  print "Error details:"
+                  ^ls -al *.dmg 2>/dev/null || print "No DMG files found"
                 }
+                
                 ^rm -rf dmg-temp
                 print "✅ macOS packages created"
               }
@@ -184,6 +201,12 @@ jobs:
               }
             }
           }
+
+      - name: List created packages
+        shell: nu {0}
+        run: |
+          print "📦 Created packages:"
+          ^ls -la *.zip *.dmg *.AppImage 2>/dev/null | lines | each { |line| print $"  ($line)" }
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
