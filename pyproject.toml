@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claudewarp"
-version = "0.0.30"
+version = "0.0.31"
 description = "Claude API proxy management tool with CLI and GUI"
 readme = "README.md"
 license = "MIT"
