@@ -244,7 +244,7 @@ jobs:
 
           # Create release with GitHub CLI
           let release_body = if (".github/templates/github/release_notes.md" | path exists) {
-            open .github/templates/github/release_notes.md | str replace '{VERSION}' $version
+            open .github/templates/github/release_notes.md | str replace "{VERSION}" $version
           } else {
             $"ClaudeWarp v($version)\n\nAutomated release build.\n\nSee CHANGELOG.md for details."
           }
