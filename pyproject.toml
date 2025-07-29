@@ -121,9 +121,6 @@ gui-build = [
     "pyside6>=6.5.0,<6.8.0",
     "pyside6-fluent-widgets>=1.7.6,<2.0.0",
     "darkdetect>=0.8.0",
-    # Build tools
-    "nuitka>=2.0.0,<3.0.0",
-    "imageio>=2.35.1",
 ]
 dev = [
     "pytest>=7.0.0",
