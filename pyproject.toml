@@ -111,6 +111,7 @@ gui = [
     "pyside6>=6.5.0,<6.8.0",
     "pyside6-fluent-widgets>=1.7.6,<2.0.0",
     "darkdetect>=0.8.0",
+    "pyinstaller>=6.14.0"
 ]
 gui-build = [
     # GUI runtime dependencies only (excludes CLI)
