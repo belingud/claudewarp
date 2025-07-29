@@ -147,7 +147,7 @@ jobs:
                   print "⚠️ DMG creation failed, but ZIP is available"
                   ^ls -al
                   print "Error details:"
-                  ^ls -al *.dmg 2>/dev/null || print "No DMG files found"
+                  try { ^ls -al *.dmg } catch { print "No DMG files found" }
                 }
                 
                 ^rm -rf dmg-temp
