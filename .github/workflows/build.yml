@@ -81,25 +81,23 @@ jobs:
           uv sync --all-groups --all-extras
           echo "✅ Dependencies installed"
 
-      - name: Build GUI application with Nuitka
+      - name: Build application
         shell: nu {0}
         run: |
           let platform = "${{ matrix.platform }}"
           let arch = "${{ matrix.arch }}"
-          print $"🔨 Building GUI application ($platform)-($arch)..."
+          print $"🔨 Building ($platform)-($arch)..."
 
           match $platform {
-            "macos" => {
-              print "🍎 Building macOS GUI app with Nuitka..."
-              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --macos-create-app-bundle --output-dir=build --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads main.py
-            }
             "windows" => {
-              print "🪟 Building Windows GUI app with Nuitka..."
-              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --output-dir=build --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads --disable-console --windows-console-mode=disable main.py
+              $env.PYTHONOPTIMIZE = "2"
+              $env.PYTHONDONTWRITEBYTECODE = "1"
+              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico main.py
             }
-            "linux" => {
-              print "🐧 Building Linux GUI app with Nuitka..."
-              uv run nuitka --standalone --onefile --enable-plugin=pyside6 --output-dir=build --linux-icon=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-downloads --disable-console main.py
+            _ => {
+              $env.PYTHONOPTIMIZE = "2"
+              $env.PYTHONDONTWRITEBYTECODE = "1"
+              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico main.py
             }
           }
 
@@ -119,17 +117,17 @@ jobs:
           match $platform {
             "macos" => {
               print "💿 Creating macOS packages..."
-              if ("build/ClaudeWarp.app" | path exists) {
+              if ("dist/ClaudeWarp.app" | path exists) {
                 # Create ZIP
                 let zip_name = $"ClaudeWarp-($version)-macos-($arch).zip"
-                cd build
+                cd dist
                 ^zip -r $"../($zip_name)" ClaudeWarp.app
                 cd ..
                 
                 # Create DMG
                 let dmg_name = $"ClaudeWarp-($version)-macos-($arch).dmg"
                 ^mkdir -p dmg-temp
-                ^cp -R build/ClaudeWarp.app dmg-temp/
+                ^cp -R dist/ClaudeWarp.app dmg-temp/
                 try {
                   ^create-dmg --volname "ClaudeWarp" --window-pos 200 120 --window-size 600 300 --icon-size 100 --icon "ClaudeWarp.app" 175 120 --hide-extension "ClaudeWarp.app" --app-drop-link 425 120 --no-internet-enable $dmg_name "dmg-temp"
                 } catch {
@@ -141,9 +139,9 @@ jobs:
             }
             "windows" => {
               print "🪟 Creating Windows package..."
-              if ("build/claudewarp.exe" | path exists) {
+              if ("dist/claudewarp.exe" | path exists) {
                 let zip_name = $"ClaudeWarp-($version)-windows-($arch).zip"
-                cd build
+                cd dist
                 ^powershell -c $"Compress-Archive -Path claudewarp.exe -DestinationPath ../($zip_name)"
                 cd ..
                 print "✅ Windows package created"
@@ -151,11 +149,11 @@ jobs:
             }
             "linux" => {
               print "🐧 Creating Linux packages..."
-              if ("build/claudewarp.bin" | path exists) {
+              if ("dist/claudewarp" | path exists) {
                 # Create ZIP
                 let zip_name = $"ClaudeWarp-($version)-linux-($arch).zip"
                 ^mkdir -p linux-package
-                ^cp build/claudewarp.bin linux-package/claudewarp
+                ^cp dist/claudewarp linux-package/
                 if ("README.md" | path exists) { ^cp README.md linux-package/ }
                 if ("LICENSE" | path exists) { ^cp LICENSE linux-package/ }
                 cd linux-package
@@ -166,7 +164,7 @@ jobs:
                 # Create AppImage
                 let appimage_name = $"ClaudeWarp-($version)-linux-($arch).AppImage"
                 ^mkdir -p ClaudeWarp.AppDir/usr/bin ClaudeWarp.AppDir/usr/share/applications
-                ^cp build/claudewarp.bin ClaudeWarp.AppDir/usr/bin/claudewarp
+                ^cp dist/claudewarp ClaudeWarp.AppDir/usr/bin/
                 
                 # Copy desktop file template
                 ^cp .github/templates/appimage/claudewarp.desktop ClaudeWarp.AppDir/claudewarp.desktop
@@ -195,27 +193,27 @@ jobs:
             *.zip
             *.dmg
             *.AppImage
-            build/
+            dist/
           retention-days: 30
 
   release:
     needs: [build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Nu shell
         uses: hustcer/setup-nu@v3
         with:
           version: "0.99"
-      
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-      
+
       - name: Create Release
         shell: nu {0}
         run: |
@@ -229,16 +227,16 @@ jobs:
             $"ClaudeWarp v($version)\n\nAutomated release build.\n\nSee CHANGELOG.md for details."
           }
           ^gh release create $"v($version)" --title $"ClaudeWarp v($version)" --notes $release_body --draft=false
-          
+
           # Find and upload all build artifacts
           cd artifacts
           print "📁 Checking artifacts directory structure:"
           ^ls -la
-          
+
           # Use bash find command to locate only top-level package files
           # This avoids uploading internal files like base_library.zip that cause "asset under the same name already exists" errors
           let all_assets = (^find . -maxdepth 2 -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" | ^grep -v "/dist/" | ^grep -v "/build/" | lines)
-          
+
           if ($all_assets | length) > 0 {
             print $"Found ($all_assets | length) assets to upload:"
             $all_assets | each { |file| print $"  - ($file)" }
