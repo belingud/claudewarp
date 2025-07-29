@@ -44,6 +44,23 @@
 
 ![Dark](artwork/dark.png)
 
+---
+
+0729更新
+
+1. v0.0.34版本加上了auth token的配置，和api key互斥，只能配置一个
+
+---
+
+0728更新
+
+1. v0.0.28版本加上了切换主题色的按钮，在亮色和暗色模式之间切换。详见上面的截图
+2. v0.0.28版本开始添加了`BIG_MODEL`和`SMALL_MODEL`，对应cc的`ANTHROPIC_MODEL`和`ANTHROPIC_SMALL_FAST_MODEL`。
+
+注意使用/model设置的模型，优先级大于`ANTHROPIC_MODEL`。为了环境变量和`settings.json`的一致性，claudewarp只设置`env.ANTHROPIC_MODEL`，不设置`model`字段。
+
+---
+
 ## 📦 安装方式
 
 ### 从发布版本安装（推荐）
@@ -63,6 +80,16 @@ cd claudewarp
 
 # 使用 pip 安装
 pip install -e .
+```
+
+### 安装命令行版
+
+```bash
+# 使用pip
+pip install claudewarp
+
+# 使用uv
+uv tool install claudewarp
 ```
 
 ## 🚀 快速开始
@@ -116,7 +143,6 @@ cw export
 | `cw current`       | 显示当前活跃代理   | `cw current`                                                    |
 | `cw remove <name>` | 删除指定代理       | `cw remove proxy-old`                                           |
 | `cw export`        | 导出环境变量       | `cw export --shell bash`                                        |
-| `cw test <name>`   | 测试代理连通性     | `cw test proxy-cn`                                              |
 
 ### 配置文件
 
