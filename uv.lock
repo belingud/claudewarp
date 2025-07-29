@@ -9,6 +9,15 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "altgraph"
+version = "0.17.4"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/de/a8/7145824cf0b9e3c28046520480f207df47e927df83aa9555fb47f8505922/altgraph-0.17.4.tar.gz", hash = "sha256:1b5afbb98f6c4dcadb2e2ae6ab9fa994bbb8c1d75f4fa96d340f9437ae454406" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/4d/3f/3bc3f1d83f6e4a7fcb834d3720544ca597590425be5ba9db032b2bf322a2/altgraph-0.17.4-py2.py3-none-any.whl", hash = "sha256:642743b4750de17e655e6711601b077bc6598dbfa3ba5fa2b2a35ce12b508dff" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
@@ -273,7 +282,7 @@ wheels = [
 
 [[package]]
 name = "claudewarp"
-version = "0.0.29"
+version = "0.0.31"
 source = { editable = "." }
 dependencies = [
     { name = "colorlog" },
@@ -309,6 +318,7 @@ docs = [
 ]
 gui = [
     { name = "darkdetect" },
+    { name = "pyinstaller" },
     { name = "pyside6" },
     { name = "pyside6-fluent-widgets" },
 ]
@@ -353,6 +363,7 @@ docs = [
 ]
 gui = [
     { name = "darkdetect", specifier = ">=0.8.0" },
+    { name = "pyinstaller", specifier = ">=6.14.0" },
     { name = "pyside6", specifier = ">=6.5.0,<6.8.0" },
     { name = "pyside6-fluent-widgets", specifier = ">=1.7.6,<2.0.0" },
 ]
@@ -835,6 +846,18 @@ dependencies = [
 sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d" }
 wheels = [
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67" },
+]
+
+[[package]]
+name = "macholib"
+version = "1.16.3"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+dependencies = [
+    { name = "altgraph" },
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/95/ee/af1a3842bdd5902ce133bd246eb7ffd4375c38642aeb5dc0ae3a0329dfa2/macholib-1.16.3.tar.gz", hash = "sha256:07ae9e15e8e4cd9a788013d81f5908b3609aa76f9b1421bae9c4d7606ec86a30" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/d1/5d/c059c180c84f7962db0aeae7c3b9303ed1d73d76f2bfbc32bc231c8be314/macholib-1.16.3-py2.py3-none-any.whl", hash = "sha256:0e315d7583d38b8c77e815b1ecbdbf504a8258d8b3e17b61165c6feb60d18f2c" },
 ]
 
 [[package]]
@@ -1543,6 +1566,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pefile"
+version = "2023.2.7"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/78/c5/3b3c62223f72e2360737fd2a57c30e5b2adecd85e70276879609a7403334/pefile-2023.2.7.tar.gz", hash = "sha256:82e6114004b3d6911c77c3953e3838654b04511b8b66e8583db70c65998017dc" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/55/26/d0ad8b448476d0a1e8d3ea5622dc77b916db84c6aa3cb1e1c0965af948fc/pefile-2023.2.7-py3-none-any.whl", hash = "sha256:da185cd2af68c08a6cd4481f7325ed600a88f6a813bad9dea07ab3ef73d8d8d6" },
+]
+
+[[package]]
 name = "pillow"
 version = "10.4.0"
 source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
@@ -2131,6 +2163,53 @@ source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
 sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/b0/77/a5b8c569bf593b0140bde72ea885a803b82086995367bf2037de0159d924/pygments-2.19.2.tar.gz", hash = "sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887" }
 wheels = [
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl", hash = "sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b" },
+]
+
+[[package]]
+name = "pyinstaller"
+version = "6.14.2"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+dependencies = [
+    { name = "altgraph" },
+    { name = "importlib-metadata", version = "8.5.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
+    { name = "importlib-metadata", version = "8.7.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version == '3.9.*'" },
+    { name = "macholib", marker = "sys_platform == 'darwin'" },
+    { name = "packaging" },
+    { name = "pefile", marker = "sys_platform == 'win32'" },
+    { name = "pyinstaller-hooks-contrib" },
+    { name = "pywin32-ctypes", marker = "sys_platform == 'win32'" },
+    { name = "setuptools", version = "75.3.2", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
+    { name = "setuptools", version = "80.9.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/f8/25/41d6be08d65bdc5126e86d854f5767397483acf360f2c95c890e3fa96a31/pyinstaller-6.14.2.tar.gz", hash = "sha256:142cce0719e79315f0cc26400c2e5c45d9b6b17e7e0491fee444a9f8f16f4917" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/a0/dd/e5f4a4be80e291d2443ac7e73fa78f17003e4f2e3ec15a2ffdea0583a5c6/pyinstaller-6.14.2-py3-none-macosx_10_13_universal2.whl", hash = "sha256:d77d18bf5343a1afef2772393d7a489d4ec2282dee5bca549803fc0d74b78330" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/8f/a5/0780ce0f9916012cafd65673a4cc3d59aee65af84c773f49b36aa98d0ce9/pyinstaller-6.14.2-py3-none-manylinux2014_aarch64.whl", hash = "sha256:3fa0c391e1300a9fd7752eb1ffe2950112b88fba9d2743eee2ef218a15f4705f" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/c8/d6/bf9e385cc20ee5dba5248716eda4d1271599c9ff2e173a0e7577d57866f0/pyinstaller-6.14.2-py3-none-manylinux2014_i686.whl", hash = "sha256:077efb2d01d16d9c8fdda3ad52788f0fead2791c5cec9ed6ce058af7e26eb74b" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/97/6f/358d23398cf210ba5a588e1311b6611762e353670d11838633cbb4c5ff79/pyinstaller-6.14.2-py3-none-manylinux2014_ppc64le.whl", hash = "sha256:fdd2bd020a18736806a6bd5d3c4352f1209b427a96ad6c459d88aec1d90c4f21" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/9f/08/379af897977d77a4cf7d8c50dbe0135950be6d97be24c3ca4b45ccccd33b/pyinstaller-6.14.2-py3-none-manylinux2014_s390x.whl", hash = "sha256:03862c6b3cf7b16843d24b529f89cd4077cbe467883cd54ce7a81940d6da09d3" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/b8/98/460a32d2e325ad0ea81e4df478a8d84b5ebe0ceaca0cd3088f16afcaba5f/pyinstaller-6.14.2-py3-none-manylinux2014_x86_64.whl", hash = "sha256:78827a21ada2a848e98671852d20d74b2955b6e2aaf2359ed13a462e1a603d84" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/6f/bc/16eef174580bf4ca386479e48d5be8a977bf36cb6a9006814d754834c773/pyinstaller-6.14.2-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:185710ab1503dfdfa14c43237d394d96ac183422d588294be42531480dfa6c38" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/3c/6b/7162d59ee37e6883a5c4830cfe7dfb06c4997cc6aeb5f170d30ae76d9a39/pyinstaller-6.14.2-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:6c673a7e761bd4a2560cfd5dbe1ccdcfe2dff304b774e6e5242fc5afed953661" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/2a/26/d9559ac0851b1e3427a6b3ab0cd9edc8082b114f2499f78af532fdd5e14d/pyinstaller-6.14.2-py3-none-win32.whl", hash = "sha256:1697601aa788e3a52f0b5e620b4741a34b82e6f222ec6e1318b3a1349f566bb2" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/79/69/111c85292ff99567a2408a6c6e9bf0b31910239f82b97d106321762d222c/pyinstaller-6.14.2-py3-none-win_amd64.whl", hash = "sha256:e10e0e67288d6dcb5898a917dd1d4272aa0ff33f197ad49a0e39618009d63ed9" },
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/3d/e2/c267cadb3307a4979757b086674f592669c04bd960a8d2746dd2d18ad57d/pyinstaller-6.14.2-py3-none-win_arm64.whl", hash = "sha256:69fd11ca57e572387826afaa4a1b3d4cb74927d76f231f0308c0bd7872ca5ac1" },
+]
+
+[[package]]
+name = "pyinstaller-hooks-contrib"
+version = "2025.8"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+dependencies = [
+    { name = "importlib-metadata", version = "8.5.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
+    { name = "importlib-metadata", version = "8.7.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version == '3.9.*'" },
+    { name = "packaging" },
+    { name = "setuptools", version = "75.3.2", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version < '3.9'" },
+    { name = "setuptools", version = "80.9.0", source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }, marker = "python_full_version >= '3.9'" },
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/71/d6/e5b378b7d4add8c879295c531309b0320e9c07a70458665d091760ffdc87/pyinstaller_hooks_contrib-2025.8.tar.gz", hash = "sha256:3402ad41dfe9b5110af134422e37fc5d421ba342c6cb980bd67cb30b7415641c" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/48/34/1d973d0dae849683e53fbcda84443ce016f315e6f4dc7605ede4f56a28c3/pyinstaller_hooks_contrib-2025.8-py3-none-any.whl", hash = "sha256:8d0b8cfa0cb689a619294ae200497374234bd4e3994b3ace2a4442274c899064" },
 ]
 
 [[package]]
@@ -9272,6 +9351,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pywin32-ctypes"
+version = "0.2.3"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/85/9f/01a1a99704853cb63f253eea009390c88e7131c67e66a0a02099a8c917cb/pywin32-ctypes-0.2.3.tar.gz", hash = "sha256:d162dc04946d704503b2edc4d55f3dba5c1d539ead017afa00142c38b9885755" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/de/3d/8161f7711c017e01ac9f008dfddd9410dff3674334c233bde66e7ba65bbf/pywin32_ctypes-0.2.3-py3-none-any.whl", hash = "sha256:8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8" },
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.2"
 source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
@@ -9390,6 +9478,32 @@ dependencies = [
 sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/fe/75/af448d8e52bf1d8fa6a9d089ca6c07ff4453d86c65c145d0a300bb073b9b/rich-14.1.0.tar.gz", hash = "sha256:e497a48b844b0320d45007cdebfeaeed8db2a4f4bcf49f15e455cfc4af11eaa8" }
 wheels = [
     { url = "https://repo.huaweicloud.com/repository/pypi/packages/e3/30/3c4d035596d3cf444529e0b2953ad0466f6049528a879d27534700580395/rich-14.1.0-py3-none-any.whl", hash = "sha256:536f5f1785986d6dbdea3c75205c473f970777b4a0d6c6dd1b696aa05a3fa04f" },
+]
+
+[[package]]
+name = "setuptools"
+version = "75.3.2"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+resolution-markers = [
+    "python_full_version < '3.9'",
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/5c/01/771ea46cce201dd42cff043a5eea929d1c030fb3d1c2ee2729d02ca7814c/setuptools-75.3.2.tar.gz", hash = "sha256:3c1383e1038b68556a382c1e8ded8887cd20141b0eb5708a6c8d277de49364f5" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/15/65/3f0dba35760d902849d39d38c0a72767794b1963227b69a587f8a336d08c/setuptools-75.3.2-py3-none-any.whl", hash = "sha256:90ab613b6583fc02d5369cbca13ea26ea0e182d1df2d943ee9cbe81d4c61add9" },
+]
+
+[[package]]
+name = "setuptools"
+version = "80.9.0"
+source = { registry = "https://repo.huaweicloud.com/repository/pypi/simple/" }
+resolution-markers = [
+    "python_full_version >= '3.11'",
+    "python_full_version == '3.10.*'",
+    "python_full_version == '3.9.*'",
+]
+sdist = { url = "https://repo.huaweicloud.com/repository/pypi/packages/18/5d/3bf57dcd21979b887f014ea83c24ae194cfcd12b9e0fda66b957c69d1fca/setuptools-80.9.0.tar.gz", hash = "sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c" }
+wheels = [
+    { url = "https://repo.huaweicloud.com/repository/pypi/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl", hash = "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922" },
 ]
 
 [[package]]
