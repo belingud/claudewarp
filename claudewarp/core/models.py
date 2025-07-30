@@ -6,10 +6,11 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Self
+from typing import Any, Dict, List, Optional, Self, TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from pydantic_core.core_schema import ValidationInfo
+if TYPE_CHECKING:
+    from pydantic_core.core_schema import ValidationInfo
 
 class ProxyServer(BaseModel):
     """代理服务器配置模型
@@ -159,7 +160,7 @@ class ProxyConfig(BaseModel):
     )
 
     @field_validator("current_proxy")
-    def validate_current_proxy(cls, v: Optional[str], values: ValidationInfo) -> Optional[str]:
+    def validate_current_proxy(cls, v: Optional[str], values: "ValidationInfo") -> Optional[str]:
         """验证当前代理是否存在于代理列表中"""
         if v is not None and "proxies" in values.data:
             proxies = values.data["proxies"]

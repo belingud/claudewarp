@@ -43,7 +43,7 @@ from qfluentwidgets import (
     TitleLabel,
 )
 
-from claudewarp.cli.formatters import _format_datetime, _mask_api_key
+from claudewarp.util import _format_datetime, _mask_api_key
 from claudewarp.core.manager import ProxyManager
 from claudewarp.core.models import ExportFormat, ProxyServer
 from claudewarp.gui.dialogs import (
