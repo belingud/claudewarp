@@ -65,7 +65,7 @@ uv run nuitka `
     --nofollow-import-to=ftplib `
     --nofollow-import-to=socketserver `
     --include-module=typing_inspection `
-    --include-data-dir=claudewarp/gui/resources `
+    --include-data-dir=claudewarp/gui/resources=claudewarp/gui/resources `
     main.py
 
 Write-Host "Compilation finished."
