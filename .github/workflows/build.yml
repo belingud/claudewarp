@@ -86,20 +86,53 @@ jobs:
         run: |
           let platform = "${{ matrix.platform }}"
           let arch = "${{ matrix.arch }}"
-          print $"🔨 Building ($platform)-($arch)..."
+          print $"🔨 Building ($platform)-($arch) with Nuitka..."
 
           match $platform {
             "windows" => {
-              $env.PYTHONOPTIMIZE = "2"
-              $env.PYTHONDONTWRITEBYTECODE = "1"
-              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico --name=ClaudeWarp main.py
+              print "🪟 Starting Windows build..."
+              ^powershell -NonInteractive -ExecutionPolicy Bypass -File ./scripts/nuitka.ps1
             }
             _ => {
-              $env.PYTHONOPTIMIZE = "2"
-              $env.PYTHONDONTWRITEBYTECODE = "1"
-              ^uv run pyinstaller --onefile --windowed --icon=claudewarp/gui/resources/icons/claudewarp.ico --name=ClaudeWarp main.py
+              print "🐧/🍎 Starting Linux/macOS build..."
+              ^chmod +x scripts/nuitka.sh
+              ^bash scripts/nuitka.sh
             }
           }
+
+      - name: Prepare packages
+        shell: nu {0}
+        run: |
+          print "📦 Preparing packages..."
+          let platform = "${{ matrix.platform }}"
+          ^mkdir -p dist
+          match $platform {
+            "macos" => {
+              if ("build/main.app" | path exists) {
+                print "Moving 'build/main.app' to 'dist/ClaudeWarp.app'"
+                ^mv build/main.app dist/ClaudeWarp.app
+              } else {
+                print "⚠️ Nuitka output 'build/main.app' not found!"
+              }
+            }
+            "windows" => {
+              if ("build/main.exe" | path exists) {
+                print "Moving 'build/main.exe' to 'dist/ClaudeWarp.exe'"
+                ^mv build/main.exe dist/ClaudeWarp.exe
+              } else {
+                print "⚠️ Nuitka output 'build/main.exe' not found!"
+              }
+            }
+            "linux" => {
+              if ("build/main.bin" | path exists) {
+                print "Moving 'build/main.bin' to 'dist/ClaudeWarp'"
+                ^mv build/main.bin dist/ClaudeWarp
+              } else {
+                print "⚠️ Nuitka output 'build/main.bin' not found!"
+              }
+            }
+          }
+          print "✅ Packages prepared."
 
       - name: Create packages
         shell: nu {0}

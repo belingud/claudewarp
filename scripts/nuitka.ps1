@@ -65,12 +65,13 @@ uv run nuitka `
     --nofollow-import-to=ftplib `
     --nofollow-import-to=socketserver `
     --include-module=typing_inspection `
-    claudewarp/gui/app.py
+    --include-data-dir=claudewarp/gui/resources `
+    main.py
 
 Write-Host "Compilation finished."
 
 # Define the path to the compiled executable
-$exePath = "build/app.exe"
+$exePath = "build/main.exe"
 
 # Check if the file exists
 if (Test-Path $exePath) {
@@ -87,5 +88,3 @@ if (Test-Path $exePath) {
     Write-Host "Error: Compiled file not found at $exePath"
 }
 
-# Pause the script to see the output before the window closes.
-Read-Host -Prompt "Press Enter to exit"
