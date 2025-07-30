@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from pydantic import ValidationError
 
 def _format_datetime(iso_string: str) -> str:
     """格式化日期时间
@@ -33,3 +34,14 @@ def _mask_api_key(api_key: str, show_chars: int = 4) -> str:
 
     return f"{api_key[:show_chars]}{'*' * (len(api_key) - show_chars * 2)}{api_key[-show_chars:]}"
 
+
+def format_validation_error(e: ValidationError) -> str:
+    """格式化Pydantic验证错误, 提取核心信息"""
+    error_messages = []
+    for error in e.errors():
+        msg = error["msg"]
+        # 移除 "Value error, " 前缀
+        if msg.startswith("Value error, "):
+                msg = msg[len("Value error, ") :]
+        error_messages.append(msg)
+    return "\n".join(error_messages)

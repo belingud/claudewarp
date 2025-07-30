@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
+set -e
 
 uv run nuitka \
     --standalone \
     --onefile \
     --enable-plugin=pyside6 \
-    --macos-create-app-bundle \
-    --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico \
     --output-dir=build \
     --assume-yes-for-download \
     --report=report.html \
@@ -57,5 +56,8 @@ uv run nuitka \
     --nofollow-import-to=socketserver \
     --include-module=typing_inspection \
     --include-data-dir=claudewarp/gui/resources=claudewarp/gui/resources \
-    main.py &&
-    du -h -d1 build
+    main.py
+
+echo
+echo "✅ Build finished:"
+du -h -d1 build

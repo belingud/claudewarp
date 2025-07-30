@@ -22,7 +22,7 @@ class ProxyServer(BaseModel):
         ..., min_length=1, max_length=50, description="代理服务器名称，用于标识和选择"
     )
     base_url: str = Field(..., description="代理服务器的基础URL，必须是有效的HTTP/HTTPS地址")
-    api_key: Optional[str] = Field(default=None, min_length=3, description="API密钥，用于身份验证")
+    api_key: Optional[str] = Field(default=None, description="API密钥，用于身份验证")
     description: str = Field(default="", max_length=200, description="代理服务器的描述信息")
     tags: List[str] = Field(default_factory=list, description="标签列表，用于分类和筛选")
     created_at: str = Field(
@@ -35,7 +35,10 @@ class ProxyServer(BaseModel):
     bigmodel: Optional[str] = Field(default=None, description="大模型名称")
     smallmodel: Optional[str] = Field(default=None, description="小模型名称")
     auth_token: Optional[str] = Field(
-        default=None, min_length=3, description="Auth令牌，用于身份验证（与api_key互斥）"
+        default=None, description="Auth令牌，用于身份验证（与api_key互斥）"
+    )
+    api_key_helper: Optional[str] = Field(
+        default=None, min_length=1, description="API密钥助手命令，用于获取API密钥（与api_key、auth_token互斥）"
     )
     @field_validator("name")
     def validate_name(cls, v: str) -> str:
@@ -76,18 +79,41 @@ class ProxyServer(BaseModel):
         """验证标签列表"""
         return list(set(i.strip() for i in v))
 
+    @field_validator("api_key")
+    def validate_api_key(cls, v: Optional[str]) -> Optional[str]:
+        """验证API Key长度"""
+        if v and len(v) < 3:
+            raise ValueError("API Key至少需要3个字符")
+        return v
+
+    @field_validator("auth_token")
+    def validate_auth_token(cls, v: Optional[str]) -> Optional[str]:
+        """验证Auth令牌长度"""
+        if v and len(v) < 3:
+            raise ValueError("Auth令牌至少需要3个字符")
+        return v
+
     @field_validator("updated_at")
     def update_timestamp(cls, v: str, values: dict) -> str:
         """自动更新时间戳"""
         return datetime.now().isoformat()
     
     @model_validator(mode="after")
-    def api_key_or_auth_token(cls, values: Self) -> Self:
-        """确保api_key或auth_token至少有一个"""
-        if values.api_key and values.auth_token:
-            raise ValueError("api_key或auth_token只能存在一个")
-        if not values.api_key and not values.auth_token:
-            raise ValueError("api_key或auth_token至少有一个必须存在")
+    def api_key_or_auth_token_or_helper(cls, values: Self) -> Self:
+        """确保api_key、auth_token或api_key_helper至少有一个且互斥"""
+        # 检查三者是否同时存在多个
+        auth_methods = []
+        if values.api_key:
+            auth_methods.append("api_key")
+        if values.auth_token:
+            auth_methods.append("auth_token")
+        if values.api_key_helper:
+            auth_methods.append("api_key_helper")
+        
+        if len(auth_methods) > 1:
+            raise ValueError(f"{'、'.join(auth_methods)}只能存在一个")
+        if not auth_methods:
+            raise ValueError("api_key、auth_token或api_key_helper至少有一个必须存在")
         return values
 
     def get_auth_method(self) -> str:
@@ -96,6 +122,8 @@ class ProxyServer(BaseModel):
             return "auth_token"
         elif self.api_key:
             return "api_key"
+        elif self.api_key_helper:
+            return "api_key_helper"
         else:
             return "none"
 
@@ -105,6 +133,8 @@ class ProxyServer(BaseModel):
             return self.auth_token
         elif self.api_key:
             return self.api_key
+        elif self.api_key_helper:
+            return self.api_key_helper
         return None
 
     class Config:
@@ -134,6 +164,14 @@ class ProxyServer(BaseModel):
                     "auth_token": "sk-ant-api03-abcdef123456",
                     "description": "使用Auth令牌的代理",
                     "tags": ["auth", "primary"],
+                    "is_active": True,
+                },
+                {
+                    "name": "proxy-helper",
+                    "base_url": "https://api.claude-proxy.com/",
+                    "api_key_helper": "echo 'sk-xxx'",
+                    "description": "使用API密钥助手命令的代理",
+                    "tags": ["helper", "dynamic"],
                     "is_active": True,
                 }
             ],

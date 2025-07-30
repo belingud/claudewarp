@@ -15,5 +15,6 @@
       "Bash(ls -la:*)"
     ],
     "deny": []
-  }
+  },
+  "apiKeyHelper": "echo 'sk-xxx'"
 }

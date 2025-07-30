@@ -34,6 +34,7 @@ from qfluentwidgets import (
 )
 
 from claudewarp.core.models import ExportFormat, ProxyServer
+from claudewarp.util import format_validation_error
 
 
 def get_app_icon() -> QIcon:
@@ -47,18 +48,40 @@ def get_app_icon() -> QIcon:
     return QIcon()  # 返回空图标作为后备
 
 
-class AddProxyDialog(QDialog):
-    """添加代理对话框"""
+class BaseProxyDialog(QDialog):
+    """代理对话框基类，封装共同功能"""
 
-    def __init__(self, parent=None):
+    def __init__(self, title: str, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("添加代理服务器")
+        self.setWindowTitle(title)
         self.setMinimumSize(450, 350)
         self.setModal(True)
         self.setWindowIcon(get_app_icon())
 
+        # 初始化UI组件
+        self.name_edit = None
+        self.url_edit = None
+        self.api_key_radio = None
+        self.auth_token_radio = None
+        self.api_key_helper_radio = None
+        self.key_edit = None
+        self.auth_token_edit = None
+        self.api_key_helper_edit = None
+        self.show_key_check = None
+        self.desc_edit = None
+        self.tags_edit = None
+        self.active_check = None
+        self.bigmodel_edit = None
+        self.smallmodel_edit = None
+        self.button_box = None
+        self._input_min_width = 300
+
         self.setup_ui()
         self.setup_connections()
+    
+    def set_input_min_width(self, edit: LineEdit):
+        """设置输入框最小宽度"""
+        edit.setMinimumWidth(self._input_min_width)
 
     def setup_ui(self):
         """设置UI"""
@@ -76,39 +99,48 @@ class AddProxyDialog(QDialog):
         # 名称
         self.name_edit = LineEdit()
         self.name_edit.setPlaceholderText("输入代理名称，如: proxy-cn")
-        self.name_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.name_edit)
         form_layout.addRow("代理名称 *:", self.name_edit)
 
         # URL
         self.url_edit = LineEdit()
         self.url_edit.setPlaceholderText("输入代理URL，如: https://api.example.com/")
-        self.url_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.url_edit)
         form_layout.addRow("代理URL *:", self.url_edit)
 
         # 认证方式选择
         auth_layout = QHBoxLayout()
-        self.api_key_radio = CheckBox("使用API密钥")
-        self.auth_token_radio = CheckBox("使用Auth令牌")
+        self.api_key_radio = CheckBox("API KEY")
+        self.auth_token_radio = CheckBox("AUTH TOKEN")
+        self.api_key_helper_radio = CheckBox("API KEY HELPER")
         self.api_key_radio.setChecked(True)
         auth_layout.addWidget(self.api_key_radio)
         auth_layout.addWidget(self.auth_token_radio)
+        auth_layout.addWidget(self.api_key_helper_radio)
         auth_layout.addStretch()
         form_layout.addRow("认证方式 *:", auth_layout)
 
         # API密钥
         self.key_edit = LineEdit()
         self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.key_edit.setPlaceholderText("输入API密钥")
-        self.key_edit.setMinimumWidth(250)
-        form_layout.addRow("API密钥 *:", self.key_edit)
+        self.key_edit.setPlaceholderText("输入API Key")
+        self.set_input_min_width(self.key_edit)
+        form_layout.addRow("API Key :", self.key_edit)
 
         # Auth令牌
         self.auth_token_edit = LineEdit()
         self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.auth_token_edit.setPlaceholderText("输入Auth令牌")
-        self.auth_token_edit.setMinimumWidth(250)
+        self.auth_token_edit.setPlaceholderText("AuthToken")
+        self.set_input_min_width(self.auth_token_edit)
         self.auth_token_edit.setEnabled(False)
-        form_layout.addRow("Auth令牌 *:", self.auth_token_edit)
+        form_layout.addRow("AuthToken :", self.auth_token_edit)
+
+        # API密钥助手
+        self.api_key_helper_edit = LineEdit()
+        self.api_key_helper_edit.setPlaceholderText("API Key Helper")
+        self.set_input_min_width(self.api_key_helper_edit)
+        self.api_key_helper_edit.setEnabled(False)
+        form_layout.addRow("API Key Helper :", self.api_key_helper_edit)
 
         # 显示密钥复选框
         self.show_key_check = CheckBox("显示密钥")
@@ -117,13 +149,13 @@ class AddProxyDialog(QDialog):
         # 描述
         self.desc_edit = LineEdit()
         self.desc_edit.setPlaceholderText("输入描述信息（可选）")
-        self.desc_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.desc_edit)
         form_layout.addRow("描述:", self.desc_edit)
 
         # 标签
         self.tags_edit = LineEdit()
         self.tags_edit.setPlaceholderText("输入标签，用逗号分隔（可选）")
-        self.tags_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.tags_edit)
         form_layout.addRow("标签:", self.tags_edit)
 
         # 启用状态
@@ -145,38 +177,41 @@ class AddProxyDialog(QDialog):
         # 大模型
         self.bigmodel_edit = LineEdit()
         self.bigmodel_edit.setPlaceholderText("如: claude-3-5-sonnet-20241022")
-        self.bigmodel_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.bigmodel_edit)
         form_layout.addRow("大模型:", self.bigmodel_edit)
 
         # 小模型
         self.smallmodel_edit = LineEdit()
         self.smallmodel_edit.setPlaceholderText("如: claude-3-5-haiku-20241022")
-        self.smallmodel_edit.setMinimumWidth(250)
+        self.set_input_min_width(self.smallmodel_edit)
         form_layout.addRow("小模型:", self.smallmodel_edit)
 
         layout.addLayout(form_layout)
 
-        # 提示信息
-        info_label = BodyLabel("* 表示必填字段")
-        info_label.setStyleSheet("color: #666; font-size: 12px;")
-        layout.addWidget(info_label)
+        # 添加子类自定义内容
+        self.add_custom_ui(layout)
 
         # 按钮
-        button_box = QDialogButtonBox(
+        self.button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        layout.addWidget(button_box)
+        layout.addWidget(self.button_box)
 
         # 设置按钮文本
-        button_box.button(QDialogButtonBox.StandardButton.Ok).setText("添加")
-        button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
+        self.setup_button_texts()
 
         # 连接信号
-        button_box.accepted.connect(self.accept_dialog)
-        button_box.rejected.connect(self.reject)
+        self.button_box.accepted.connect(self.accept_dialog)
+        self.button_box.rejected.connect(self.reject)
 
-        # 保存引用
-        self.button_box = button_box
+    def add_custom_ui(self, layout):
+        """子类可重写此方法添加自定义UI元素"""
+        pass
+
+    def setup_button_texts(self):
+        """子类可重写此方法设置按钮文本"""
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText("确定")
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
     def setup_connections(self):
         """设置信号连接"""
@@ -186,12 +221,14 @@ class AddProxyDialog(QDialog):
         # 认证方式切换
         self.api_key_radio.toggled.connect(self.on_auth_method_changed)
         self.auth_token_radio.toggled.connect(self.on_auth_method_changed)
+        self.api_key_helper_radio.toggled.connect(self.on_auth_method_changed)
 
         # 实时验证
         self.name_edit.textChanged.connect(self.validate_input)
         self.url_edit.textChanged.connect(self.validate_input)
         self.key_edit.textChanged.connect(self.validate_input)
         self.auth_token_edit.textChanged.connect(self.validate_input)
+        self.api_key_helper_edit.textChanged.connect(self.validate_input)
 
         # 初始验证
         self.validate_input()
@@ -212,11 +249,28 @@ class AddProxyDialog(QDialog):
             if sender == self.api_key_radio:
                 self.key_edit.setEnabled(True)
                 self.auth_token_edit.setEnabled(False)
+                self.api_key_helper_edit.setEnabled(False)
                 self.auth_token_radio.setChecked(False)
+                self.api_key_helper_radio.setChecked(False)
             elif sender == self.auth_token_radio:
                 self.key_edit.setEnabled(False)
                 self.auth_token_edit.setEnabled(True)
+                self.api_key_helper_edit.setEnabled(False)
                 self.api_key_radio.setChecked(False)
+                self.api_key_helper_radio.setChecked(False)
+            elif sender == self.api_key_helper_radio:
+                self.key_edit.setEnabled(False)
+                self.auth_token_edit.setEnabled(False)
+                self.api_key_helper_edit.setEnabled(True)
+                self.api_key_radio.setChecked(False)
+                self.auth_token_radio.setChecked(False)
+        else:
+            # 如果用户尝试取消选择当前选项，阻止这个操作
+            # 检查是否还有其他选项被选中
+            if not (self.api_key_radio.isChecked() or self.auth_token_radio.isChecked() or self.api_key_helper_radio.isChecked()):
+                # 如果没有其他选项被选中，恢复当前选项的选中状态
+                sender.setChecked(True)
+                return
         self.validate_input()
 
     def validate_input(self):
@@ -225,48 +279,53 @@ class AddProxyDialog(QDialog):
         url = self.url_edit.text().strip()
         key = self.key_edit.text().strip()
         auth_token = self.auth_token_edit.text().strip()
+        api_key_helper = self.api_key_helper_edit.text().strip()
 
         # 检查必填字段
         if self.api_key_radio.isChecked():
             valid = bool(name and url and key)
-        else:
+        elif self.auth_token_radio.isChecked():
             valid = bool(name and url and auth_token)
+        else:
+            valid = bool(name and url and api_key_helper)
 
         # 启用/禁用确定按钮
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
 
     def accept_dialog(self):
-        """确认对话框"""
-        try:
-            # 获取并验证数据
-            proxy_data = self.get_proxy_data()
+        """确认对话框 - 子类应重写此方法"""
+        raise NotImplementedError("子类必须实现 accept_dialog 方法")
 
-            # 使用Pydantic验证数据
-            ProxyServer(**proxy_data)
-
-            # 验证通过，接受对话框
-            self.accept()
-
-        except Exception as e:
-            QMessageBox.critical(self, "输入错误", f"数据验证失败:\\n{e}")
-
-    def get_proxy_data(self) -> Dict[str, Any]:
-        """获取代理数据"""
-        tags_text = self.tags_edit.text().strip()
-        tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
-
+    def get_auth_credentials(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
+        """获取认证凭据"""
         if self.api_key_radio.isChecked():
             api_key = self.key_edit.text().strip()
             auth_token = None
-        else:
+            api_key_helper = None
+        elif self.auth_token_radio.isChecked():
             api_key = None
             auth_token = self.auth_token_edit.text().strip()
+            api_key_helper = None
+        else:
+            api_key = None
+            auth_token = None
+            api_key_helper = self.api_key_helper_edit.text().strip()
+        
+        return api_key, auth_token, api_key_helper
+
+    def get_common_data(self) -> Dict[str, Any]:
+        """获取通用数据"""
+        tags_text = self.tags_edit.text().strip()
+        tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
+
+        api_key, auth_token, api_key_helper = self.get_auth_credentials()
 
         return {
             "name": self.name_edit.text().strip(),
             "base_url": self.url_edit.text().strip(),
             "api_key": api_key,
             "auth_token": auth_token,
+            "api_key_helper": api_key_helper,
             "description": self.desc_edit.text().strip(),
             "tags": tags,
             "is_active": self.active_check.isChecked(),
@@ -275,139 +334,53 @@ class AddProxyDialog(QDialog):
         }
 
 
-class EditProxyDialog(QDialog):
+class AddProxyDialog(BaseProxyDialog):
+    """添加代理对话框"""
+
+    def __init__(self, parent=None):
+        super().__init__("添加代理服务器", parent)
+
+    def add_custom_ui(self, layout):
+        """添加自定义UI元素"""
+        # 提示信息
+        info_label = BodyLabel("* 表示必填字段")
+        info_label.setStyleSheet("color: #666; font-size: 12px;")
+        layout.addWidget(info_label)
+
+    def setup_button_texts(self):
+        """设置按钮文本"""
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText("添加")
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
+
+    def accept_dialog(self):
+        """确认对话框"""
+        try:
+            # 获取并验证数据
+            proxy_data = self.get_common_data()
+
+            # 使用Pydantic验证数据
+            ProxyServer(**proxy_data)
+
+            # 验证通过，接受对话框
+            self.accept()
+
+        except Exception as e:
+            err_msg = format_validation_error(e)
+            QMessageBox.critical(self, "输入错误", f"数据验证失败:\n{err_msg}")
+
+
+class EditProxyDialog(BaseProxyDialog):
     """编辑代理对话框"""
 
     def __init__(self, proxy: ProxyServer, parent=None):
-        super().__init__(parent)
         self.original_proxy = proxy
-        self.setWindowTitle(f"编辑代理: {proxy.name}")
-        self.setMinimumSize(450, 350)
-        self.setModal(True)
-        self.setWindowIcon(get_app_icon())
-
-        self.setup_ui()
-        self.setup_connections()
+        super().__init__(f"编辑代理: {proxy.name}", parent)
         self.load_proxy_data()
 
-    def setup_ui(self):
-        """设置UI"""
-        layout = QVBoxLayout(self)
-
-        # 表单布局
-        form_layout = QFormLayout()
-
-        # 设置表单布局属性以优化空间使用
-        form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        form_layout.setHorizontalSpacing(10)
-        form_layout.setVerticalSpacing(8)
-
-        # 名称
-        self.name_edit = LineEdit()
-        self.name_edit.setMinimumWidth(250)
-        form_layout.addRow("代理名称 *:", self.name_edit)
-
-        # URL
-        self.url_edit = LineEdit()
-        self.url_edit.setMinimumWidth(250)
-        form_layout.addRow("代理URL *:", self.url_edit)
-
-        # 认证方式选择
-        auth_layout = QHBoxLayout()
-        self.api_key_radio = CheckBox("使用API密钥")
-        self.auth_token_radio = CheckBox("使用Auth令牌")
-        auth_layout.addWidget(self.api_key_radio)
-        auth_layout.addWidget(self.auth_token_radio)
-        auth_layout.addStretch()
-        form_layout.addRow("认证方式 *:", auth_layout)
-
-        # API密钥
-        self.key_edit = LineEdit()
-        self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.key_edit.setMinimumWidth(250)
-        form_layout.addRow("API密钥 *:", self.key_edit)
-
-        # Auth令牌
-        self.auth_token_edit = LineEdit()
-        self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.auth_token_edit.setMinimumWidth(250)
-        form_layout.addRow("Auth令牌 *:", self.auth_token_edit)
-
-        # 显示密钥复选框
-        self.show_key_check = CheckBox("显示密钥")
-        form_layout.addRow("", self.show_key_check)
-
-        # 描述
-        self.desc_edit = LineEdit()
-        self.desc_edit.setMinimumWidth(250)
-        form_layout.addRow("描述:", self.desc_edit)
-
-        # 标签
-        self.tags_edit = LineEdit()
-        self.tags_edit.setMinimumWidth(250)
-        form_layout.addRow("标签:", self.tags_edit)
-
-        # 启用状态
-        self.active_check = CheckBox("启用此代理")
-        form_layout.addRow("", self.active_check)
-
-        # 模型配置分割线
-        model_line = QFrame()
-        model_line.setFrameShape(QFrame.Shape.HLine)
-        model_line.setFrameShadow(QFrame.Shadow.Sunken)
-        form_layout.addRow("", model_line)
-
-        # 模型配置标题
-        model_title = BodyLabel("模型配置 (可选)")
-        model_title.setStyleSheet("font-weight: bold; color: #333;")
-        form_layout.addRow("", model_title)
-
-        # 大模型
-        self.bigmodel_edit = LineEdit()
-        self.bigmodel_edit.setPlaceholderText("如: claude-3-5-sonnet-20241022")
-        self.bigmodel_edit.setMinimumWidth(250)
-        form_layout.addRow("大模型:", self.bigmodel_edit)
-
-        # 小模型
-        self.smallmodel_edit = LineEdit()
-        self.smallmodel_edit.setPlaceholderText("如: claude-3-5-haiku-20241022")
-        self.smallmodel_edit.setMinimumWidth(250)
-        form_layout.addRow("小模型:", self.smallmodel_edit)
-
-        layout.addLayout(form_layout)
-
-        # 按钮
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        layout.addWidget(button_box)
-
-        # 设置按钮文本
-        button_box.button(QDialogButtonBox.StandardButton.Ok).setText("更新")
-        button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
-
-        # 连接信号
-        button_box.accepted.connect(self.accept_dialog)
-        button_box.rejected.connect(self.reject)
-
-        # 保存引用
-        self.button_box = button_box
-
-    def setup_connections(self):
-        """设置信号连接"""
-        # 显示/隐藏密钥
-        self.show_key_check.toggled.connect(self.toggle_key_visibility)
-
-        # 认证方式切换
-        self.api_key_radio.toggled.connect(self.on_auth_method_changed)
-        self.auth_token_radio.toggled.connect(self.on_auth_method_changed)
-
-        # 实时验证
-        self.name_edit.textChanged.connect(self.validate_input)
-        self.url_edit.textChanged.connect(self.validate_input)
-        self.key_edit.textChanged.connect(self.validate_input)
-        self.auth_token_edit.textChanged.connect(self.validate_input)
+    def setup_button_texts(self):
+        """设置按钮文本"""
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText("更新")
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
 
     def load_proxy_data(self):
         """加载代理数据"""
@@ -415,6 +388,7 @@ class EditProxyDialog(QDialog):
         self.url_edit.setText(self.original_proxy.base_url)
         self.key_edit.setText(self.original_proxy.api_key)
         self.auth_token_edit.setText(self.original_proxy.auth_token or "")
+        self.api_key_helper_edit.setText(self.original_proxy.api_key_helper or "")
         self.desc_edit.setText(self.original_proxy.description)
         self.tags_edit.setText(", ".join(self.original_proxy.tags))
         self.active_check.setChecked(self.original_proxy.is_active)
@@ -425,58 +399,30 @@ class EditProxyDialog(QDialog):
         if self.original_proxy.auth_token:
             self.auth_token_radio.setChecked(True)
             self.api_key_radio.setChecked(False)
+            self.api_key_helper_radio.setChecked(False)
             self.key_edit.setEnabled(False)
             self.auth_token_edit.setEnabled(True)
+            self.api_key_helper_edit.setEnabled(False)
+        elif self.original_proxy.api_key_helper:
+            self.api_key_helper_radio.setChecked(True)
+            self.api_key_radio.setChecked(False)
+            self.auth_token_radio.setChecked(False)
+            self.key_edit.setEnabled(False)
+            self.auth_token_edit.setEnabled(False)
+            self.api_key_helper_edit.setEnabled(True)
         else:
             self.api_key_radio.setChecked(True)
             self.auth_token_radio.setChecked(False)
+            self.api_key_helper_radio.setChecked(False)
             self.key_edit.setEnabled(True)
             self.auth_token_edit.setEnabled(False)
-
-    def toggle_key_visibility(self, visible: bool):
-        """切换密钥显示状态"""
-        if visible:
-            self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Normal)
-        else:
-            self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
-
-    def on_auth_method_changed(self, checked: bool):
-        """处理认证方式切换"""
-        sender = self.sender()
-        if checked:
-            if sender == self.api_key_radio:
-                self.key_edit.setEnabled(True)
-                self.auth_token_edit.setEnabled(False)
-                self.auth_token_radio.setChecked(False)
-            elif sender == self.auth_token_radio:
-                self.key_edit.setEnabled(False)
-                self.auth_token_edit.setEnabled(True)
-                self.api_key_radio.setChecked(False)
-        self.validate_input()
-
-    def validate_input(self):
-        """验证输入"""
-        name = self.name_edit.text().strip()
-        url = self.url_edit.text().strip()
-        key = self.key_edit.text().strip()
-        auth_token = self.auth_token_edit.text().strip()
-
-        # 检查必填字段
-        if self.api_key_radio.isChecked():
-            valid = bool(name and url and key)
-        else:
-            valid = bool(name and url and auth_token)
-
-        # 启用/禁用确定按钮
-        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
+            self.api_key_helper_edit.setEnabled(False)
 
     def accept_dialog(self):
         """确认对话框"""
         try:
             # 获取并验证数据
-            update_data = self.get_update_data()
+            update_data = self.get_common_data()
 
             # 创建临时对象验证数据
             temp_data = self.original_proxy.model_dump()
@@ -488,30 +434,6 @@ class EditProxyDialog(QDialog):
 
         except Exception as e:
             QMessageBox.critical(self, "输入错误", f"数据验证失败:\\n{e}")
-
-    def get_update_data(self) -> Dict[str, Any]:
-        """获取更新数据"""
-        tags_text = self.tags_edit.text().strip()
-        tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
-
-        if self.api_key_radio.isChecked():
-            api_key = self.key_edit.text().strip()
-            auth_token = None
-        else:
-            api_key = None
-            auth_token = self.auth_token_edit.text().strip()
-
-        return {
-            "name": self.name_edit.text().strip(),
-            "base_url": self.url_edit.text().strip(),
-            "api_key": api_key,
-            "auth_token": auth_token,
-            "description": self.desc_edit.text().strip(),
-            "tags": tags,
-            "is_active": self.active_check.isChecked(),
-            "bigmodel": self.bigmodel_edit.text().strip() or None,
-            "smallmodel": self.smallmodel_edit.text().strip() or None,
-        }
 
 
 class ConfirmDialog(QDialog):

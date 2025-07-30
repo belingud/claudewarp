@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+from pydantic import ValidationError
+
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
@@ -43,7 +45,7 @@ from qfluentwidgets import (
     TitleLabel,
 )
 
-from claudewarp.util import _format_datetime, _mask_api_key
+from claudewarp.util import _format_datetime, _mask_api_key, format_validation_error
 from claudewarp.core.manager import ProxyManager
 from claudewarp.core.models import ExportFormat, ProxyServer
 from claudewarp.gui.dialogs import (
@@ -323,16 +325,16 @@ class MainWindow(QMainWindow):
         return group
 
     def create_current_proxy_group(self) -> CardWidget:
-        """创建当前代理信息组"""
+        """创建当前配置信息组"""
         group = CardWidget()
         layout = QVBoxLayout(group)
 
         # 添加标题
-        title = TitleLabel("当前代理信息")
+        title = TitleLabel("当前配置信息")
         layout.addWidget(title)
 
-        # 当前代理标签
-        self.current_proxy_label = StrongBodyLabel("未设置代理")
+        # 当前配置标签
+        self.current_proxy_label = StrongBodyLabel("未设置claude code配置")
         self.current_proxy_label.setStyleSheet("color: #666; padding: 10px;")
         layout.addWidget(self.current_proxy_label)
 
@@ -470,27 +472,27 @@ class MainWindow(QMainWindow):
             # 获取选中的代理名称
             proxy_name = self.get_selected_proxy_name()
             if not proxy_name:
-                self.logger.debug("未选中代理，尝试使用当前代理")
+                self.logger.debug("未选中配置，尝试使用当前配置")
                 # 如果没有选中代理，使用当前代理
                 current = self.proxy_manager.get_current_proxy()
                 if not current:
-                    self.logger.warning("没有当前代理可用")
-                    QMessageBox.warning(self, "应用失败", "请先选择一个代理或设置当前代理")
+                    self.logger.warning("没有当前配置可用")
+                    QMessageBox.warning(self, "应用失败", "请先选择一个配置或设置当前配置")
                     return
                 proxy_name = current.name
-                self.logger.debug(f"使用当前代理: {proxy_name}")
+                self.logger.debug(f"使用当前配置: {proxy_name}")
             else:
-                self.logger.debug(f"使用选中代理: {proxy_name}")
+                self.logger.debug(f"使用选中配置: {proxy_name}")
 
             # 应用配置
-            self.logger.info(f"开始应用代理 '{proxy_name}' 的配置到Claude Code")
+            self.logger.info(f"开始应用配置 '{proxy_name}' 的配置到Claude Code")
             success = self.proxy_manager.apply_claude_code_setting(proxy_name)
             if success:
-                self.logger.info(f"成功应用代理 '{proxy_name}' 到Claude Code")
+                self.logger.info(f"成功应用配置 '{proxy_name}' 到Claude Code")
                 QMessageBox.information(
                     self,
                     "应用成功",
-                    f"已成功将代理 '{proxy_name}' 的配置应用到 Claude Code\n\n"
+                    f"已成功将配置 '{proxy_name}' 的配置应用到 Claude Code\n\n"
                     "现在可以重启 Claude Code 应用以使用新配置。",
                 )
             else:
@@ -517,9 +519,9 @@ class MainWindow(QMainWindow):
             self.show_error(f"刷新数据失败: {e}")
 
     def update_proxy_table(self):
-        """更新代理表格"""
+        """更新配置表格"""
         try:
-            # 获取代理列表
+            # 获取配置列表
             proxies = self.proxy_manager.list_proxies()
             current_proxy = self.proxy_manager.get_current_proxy()
             current_name = current_proxy.name if current_proxy else None
@@ -552,11 +554,6 @@ class MainWindow(QMainWindow):
 
                 # 名称
                 name_item = QTableWidgetItem(name)
-                # 当前代理使用粗体，其他使用默认字体
-                if name == current_name:
-                    font = name_item.font()
-                    font.setWeight(QFont.Weight.Bold)
-                    name_item.setFont(font)
                 self.proxy_table.setItem(row, 1, name_item)
 
                 # URL
@@ -577,11 +574,11 @@ class MainWindow(QMainWindow):
                 time_item = QTableWidgetItem(time_text)
                 self.proxy_table.setItem(row, 4, time_item)
 
-            # 更新代理数量显示
-            self.proxy_count_label.setText(f"代理数量: {len(filtered_proxies)}/{len(proxies)}")
+            # 更新配置数量显示
+            self.proxy_count_label.setText(f"配置数量: {len(filtered_proxies)}/{len(proxies)}")
 
         except Exception as e:
-            self.show_error(f"更新代理表格失败: {e}")
+            self.show_error(f"更新配置表格失败: {e}")
 
     def apply_filters(self, proxies: Dict[str, ProxyServer]) -> Dict[str, ProxyServer]:
         """应用搜索和状态筛选"""
@@ -608,17 +605,17 @@ class MainWindow(QMainWindow):
         return filtered
 
     def update_current_proxy_info(self):
-        """更新当前代理信息显示"""
+        """更新当前配置信息显示"""
         try:
             current_proxy = self.proxy_manager.get_current_proxy()
 
             if current_proxy is None:
-                self.current_proxy_label.setText("未设置代理")
+                self.current_proxy_label.setText("未设置配置")
                 self.current_proxy_label.setStyleSheet("color: #999; padding: 10px;")
                 self.proxy_info_text.clear()
-                self.proxy_info_text.setPlaceholderText("请先选择一个代理服务器")
+                self.proxy_info_text.setPlaceholderText("请先选择一个配置")
             else:
-                self.current_proxy_label.setText(f"当前代理: {current_proxy.name}")
+                self.current_proxy_label.setText(f"当前配置: {current_proxy.name}")
                 self.current_proxy_label.setStyleSheet(
                     "color: #2E8B57; font-weight: bold; padding: 10px;"
                 )
@@ -639,17 +636,17 @@ class MainWindow(QMainWindow):
                 self.proxy_info_text.setHtml(info_text)
 
         except Exception as e:
-            self.show_error(f"更新当前代理信息失败: {e}")
+            self.show_error(f"更新当前配置信息失败: {e}")
 
     def update_statistics(self):
         """更新统计信息"""
         try:
             status = self.proxy_manager.get_status()
 
-            # 计算未启用代理数量
+            # 计算未启用配置数量
             inactive_proxies = status["total_proxies"] - status["active_proxies"]
 
-            # 获取所有代理的标签分布
+            # 获取所有配置的标签分布
             tag_distribution = {}
             all_proxies = self.proxy_manager.list_proxies()
             for proxy in all_proxies.values():
@@ -657,9 +654,9 @@ class MainWindow(QMainWindow):
                     tag_distribution[tag] = tag_distribution.get(tag, 0) + 1
 
             stats_text = f"""
-<b>总代理数量:</b> {status["total_proxies"]}<br>
-<b>活跃代理:</b> {status["active_proxies"]}<br>
-<b>未启用代理:</b> {inactive_proxies}<br>
+<b>总配置数量:</b> {status["total_proxies"]}<br>
+<b>活跃配置:</b> {status["active_proxies"]}<br>
+<b>未启用配置:</b> {inactive_proxies}<br>
 <b>配置版本:</b> {status["config_version"]}<br>
 <b>最后更新:</b> {self.format_datetime(status["config_updated_at"])}
             """.strip()
@@ -683,10 +680,10 @@ class MainWindow(QMainWindow):
             return iso_string
 
     def update_proxy_info_display(self, proxy: ProxyServer):
-        """更新代理信息显示
+        """更新配置信息显示
 
         Args:
-            proxy: 代理服务器对象
+            proxy: 配置对象
         """
         # 构建信息文本
         info_lines = [
@@ -751,7 +748,7 @@ class MainWindow(QMainWindow):
         self.status_filter.setCurrentIndex(0)
 
     def get_selected_proxy_name(self) -> Optional[str]:
-        """获取选中的代理名称"""
+        """获取选中的配置名称"""
         selected_rows = self.proxy_table.selectionModel().selectedRows()
         if not selected_rows:
             return None
@@ -760,14 +757,14 @@ class MainWindow(QMainWindow):
         name_item = self.proxy_table.item(row, 1)
         return name_item.text() if name_item else None
 
-    # 代理操作方法
+    # 配置操作方法
     def add_proxy(self):
-        """添加代理"""
-        self.logger.info("开始添加新代理")
+        """添加配置"""
+        self.logger.info("开始添加新配置")
         dialog = AddProxyDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             proxy_data = dialog.get_proxy_data()
-            self.logger.debug(f"获取代理数据: {proxy_data['name']}")
+            self.logger.debug(f"获取配置数据: {proxy_data['name']}")
             try:
                 # 直接传递参数给add_proxy方法
                 proxy = self.proxy_manager.add_proxy(
@@ -781,18 +778,22 @@ class MainWindow(QMainWindow):
                     is_active=proxy_data.get("is_active", True),
                     set_as_current=proxy_data.get("set_as_current", False),
                 )
-                self.logger.info(f"代理 '{proxy.name}' 添加成功")
+                self.logger.info(f"配置 '{proxy.name}' 添加成功")
                 self.refresh_data()
-                self.status_label.setText(f"代理 '{proxy.name}' 添加成功")
+                self.status_label.setText(f"配置 '{proxy.name}' 添加成功")
                 self.proxy_added.emit(proxy.name)
+            except ValidationError as e:
+                error_message = format_validation_error(e)
+                self.logger.error(f"添加配置失败: {error_message}")
+                self.show_error(f"数据验证失败:\n{error_message}")
             except Exception as e:
-                self.logger.error(f"添加代理失败: {e}")
-                self.show_error(f"添加代理失败: {e}")
+                self.logger.error(f"添加配置失败: {e}")
+                self.show_error(f"添加配置失败: {e}")
         else:
-            self.logger.debug("用户取消了添加代理操作")
+            self.logger.debug("用户取消了添加配置操作")
 
     def edit_proxy(self):
-        """编辑代理"""
+        """编辑配置"""
         proxy_name = self.get_selected_proxy_name()
         if not proxy_name:
             return
@@ -804,15 +805,15 @@ class MainWindow(QMainWindow):
                 update_data = dialog.get_update_data()
                 new_name = update_data.pop("name", proxy_name)
 
-                # 如果名称发生了变化，需要先删除旧代理再添加新代理
+                # 如果名称发生了变化，需要先删除旧配置再添加新配置
                 if new_name != proxy_name:
-                    # 先检查原代理是否为当前代理
+                    # 先检查原配置是否为当前配置
                     current_proxy = self.proxy_manager.get_current_proxy()
                     was_current = current_proxy and current_proxy.name == proxy_name
 
-                    # 删除旧代理
+                    # 删除旧配置
                     self.proxy_manager.remove_proxy(proxy_name)
-                    # 添加新代理
+                    # 添加新配置
                     self.proxy_manager.add_proxy(
                         name=new_name,
                         base_url=update_data["base_url"],
@@ -823,19 +824,23 @@ class MainWindow(QMainWindow):
                         smallmodel=update_data["smallmodel"],
                         is_active=update_data["is_active"],
                     )
-                    # 如果原代理是当前代理，切换到新名称
+                    # 如果原配置是当前配置，切换到新名称
                     if was_current:
                         self.proxy_manager.switch_proxy(new_name)
                 else:
                     # 名称没有变化，直接更新
                     self.proxy_manager.update_proxy(proxy_name, **update_data)
                 self.refresh_data()
-                self.status_label.setText(f"代理 '{new_name}' 更新成功")
+                self.status_label.setText(f"配置 '{new_name}' 更新成功")
+        except ValidationError as e:
+            error_message = format_validation_error(e)
+            self.logger.error(f"编辑配置失败: {error_message}")
+            self.show_error(f"数据验证失败:\n{error_message}")
         except Exception as e:
-            self.show_error(f"编辑代理失败: {e}")
+            self.show_error(f"编辑配置失败: {e}")
 
     def remove_proxy(self):
-        """删除代理"""
+        """删除配置"""
         proxy_name = self.get_selected_proxy_name()
         if not proxy_name:
             return
@@ -851,7 +856,7 @@ class MainWindow(QMainWindow):
                 self.show_error(f"删除失败: {e}")
 
     def switch_proxy(self):
-        """切换代理"""
+        """切换配置"""
         proxy_name = self.get_selected_proxy_name()
         if not proxy_name:
             return
@@ -865,23 +870,27 @@ class MainWindow(QMainWindow):
             self.show_error(f"切换失败: {e}")
 
     def toggle_proxy_status(self):
-        """切换代理启用状态"""
+        """
+        切换配置启用状态
+
+        获取当前选择的配置，切换其状态，并刷新数据  
+        """
         proxy_name = self.get_selected_proxy_name()
         if not proxy_name:
             return
 
         try:
-            # 获取当前代理状态
+            # 获取当前配置状态
             proxy = self.proxy_manager.get_proxy(proxy_name)
             # 切换状态
             new_status = not proxy.is_active
-            # 更新代理状态
+            # 更新配置状态
             self.proxy_manager.update_proxy(proxy_name, is_active=new_status)
             self.refresh_data()
             status_text = "启用" if new_status else "禁用"
             self.status_label.setText(f"'{proxy_name}' 已{status_text}")
         except Exception as e:
-            self.show_error(f"切换代理状态失败: {e}")
+            self.show_error(f"切换配置状态失败: {e}")
 
     def toggle_theme(self):
         """切换主题按钮响应函数"""

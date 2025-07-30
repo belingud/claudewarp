@@ -95,6 +95,7 @@ class ProxyManager:
         bigmodel: Optional[str] = None,
         smallmodel: Optional[str] = None,
         auth_token: Optional[str] = None,
+        api_key_helper: Optional[str] = None,
     ) -> ProxyServer:
         """添加新的代理服务器
 
@@ -134,6 +135,7 @@ class ProxyManager:
                 bigmodel=bigmodel,
                 smallmodel=smallmodel,
                 auth_token=auth_token,
+                api_key_helper=api_key_helper,
             )
 
             # 添加到配置

@@ -93,10 +93,15 @@ jobs:
               print "🪟 Starting Windows build..."
               ^powershell -NonInteractive -ExecutionPolicy Bypass -File ./scripts/nuitka.ps1
             }
-            _ => {
-              print "🐧/🍎 Starting Linux/macOS build..."
-              ^chmod +x scripts/nuitka.sh
-              ^bash scripts/nuitka.sh
+            "linux" => {
+              print "🐧 Starting Linux build..."
+              ^chmod +x scripts/nuitka_linux.sh
+              ^bash scripts/nuitka_linux.sh
+            }
+            "macos" => {
+              print "🍎 Starting macOS build..."
+              ^chmod +x scripts/nuitka_mac.sh
+              ^bash scripts/nuitka_mac.sh
             }
           }
 
