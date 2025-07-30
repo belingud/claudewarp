@@ -21,7 +21,7 @@ nuitka-universal:
 # Direct Nuitka command with specified parameters
 nuitka-direct:
     @echo "Building GUI application with direct Nuitka command..."
-    @uv run nuitka --standalone --onefile --enable-plugin=pyside6 --macos-create-app-bundle --output-dir=build --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico --assume-yes-for-download --disable-console main.py
+    @uv run nuitka --standalone --onefile --enable-plugin=pyside6 --macos-create-app-bundle --output-dir=build --assume-yes-for-download --macos-app-icon=claudewarp/gui/resources/icons/claudewarp.ico main.py
 
 # Legacy PyInstaller support (deprecated)
 pyinstaller:

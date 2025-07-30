@@ -21,8 +21,11 @@ def main() -> int:
         return gui_main(debug=debug)
 
     except ImportError as e:
-        print(f"Error: Failed to import GUI modules: {e}")
-        print("Please ensure PySide6 and qfluentwidgets are installed")
+        print(f"Import error: {e}")
+        if "--debug" in sys.argv:
+            import traceback
+
+            traceback.print_exc()
         return 1
     except KeyboardInterrupt:
         print("\nApplication interrupted by user")
