@@ -594,12 +594,34 @@ def edit(
             console.print(f"当前认证方式: {current_auth}")
 
             # 询问认证方式
-            auth_method = Prompt.ask(
-                "选择认证方式",
-                choices=["api_key", "auth_token", "api_key_helper", "keep_current"],
-                default="keep_current",
-                console=console,
-            )
+            console.print("[bold blue]请选择认证方式:[/bold blue]")
+            console.print("  [1] API Key")
+            console.print("  [2] Auth Token")
+            console.print("  [3] API Key Helper")
+            console.print("  [4] 保持当前认证方式")
+            
+            while True:
+                choice = Prompt.ask(
+                    "请输入选项 (1-4)",
+                    choices=["1", "2", "3", "4"],
+                    default="4",
+                    console=console,
+                )
+                
+                if choice == "1":
+                    auth_method = "api_key"
+                    break
+                elif choice == "2":
+                    auth_method = "auth_token"
+                    break
+                elif choice == "3":
+                    auth_method = "api_key_helper"
+                    break
+                elif choice == "4":
+                    auth_method = "keep_current"
+                    break
+                else:
+                    console.print("[red]无效的选择，请重新输入[/red]")
 
             if auth_method == "api_key":
                 key = Prompt.ask(

@@ -802,7 +802,7 @@ class MainWindow(QMainWindow):
             proxy = self.proxy_manager.get_proxy(proxy_name)
             dialog = EditProxyDialog(proxy, self)
             if dialog.exec() == QDialog.DialogCode.Accepted:
-                update_data = dialog.get_update_data()
+                update_data = dialog.get_common_data()
                 new_name = update_data.pop("name", proxy_name)
 
                 # 如果名称发生了变化，需要先删除旧配置再添加新配置

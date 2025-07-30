@@ -304,6 +304,7 @@ class ProxyManager:
         bigmodel: Optional[str] = None,
         smallmodel: Optional[str] = None,
         auth_token: Optional[str] = None,
+        api_key_helper: Optional[str] = None,
     ) -> ProxyServer:
         """更新代理服务器信息
 
@@ -317,6 +318,7 @@ class ProxyManager:
             bigmodel: 新的大模型名称（可选）
             smallmodel: 新的小模型名称（可选）
             auth_token: 新的Auth令牌（可选，与api_key互斥）
+            api_key_helper: 新的API密钥助手（可选，与api_key互斥）
 
         Returns:
             ProxyServer: 更新后的代理服务器对象
@@ -353,10 +355,15 @@ class ProxyManager:
                 # 如果设置了api_key，则清空auth_token
                 update_data["api_key"] = api_key
                 update_data["auth_token"] = None
+            elif api_key_helper is not None:
+                # 如果设置了api_key_helper，则清空auth_token
+                update_data["api_key_helper"] = api_key_helper
+                update_data["auth_token"] = None
             else:
                 # 保持原来的认证方式
                 update_data["api_key"] = proxy.api_key
                 update_data["auth_token"] = proxy.auth_token
+                update_data["api_key_helper"] = proxy.api_key_helper
 
             # 创建新的代理对象（会自动进行数据验证和更新时间戳）
             updated_proxy = ProxyServer(**update_data)
@@ -463,7 +470,7 @@ class ProxyManager:
             lines.append("")
 
         # 生成环境变量
-        base_url_var = f"{export_format.prefix}API_BASE_URL"
+        base_url_var = f"{export_format.prefix}BASE_URL"
 
         # 根据认证方式选择要导出的凭据
         auth_method = proxy.get_auth_method()
