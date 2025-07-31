@@ -154,8 +154,8 @@ class ProxyManager:
         except ValueError as e:
             # Pydantic验证错误
             self.logger.error(
-                f"Data> name: {name}, base_url: {base_url}, api_key: {'***' if api_key else 'empty'}," + 
-                f" auth_token: {'***' if auth_token else 'empty'}, api_key_helper: {'***' if api_key_helper else 'empty'}"
+                f"Data> name: {name}, base_url: {base_url}, api_key: {'***' if api_key else 'empty'},"
+                + f" auth_token: {'***' if auth_token else 'empty'}, api_key_helper: {'***' if api_key_helper else 'empty'}"
             )
             raise e from None
         except Exception as e:
@@ -756,8 +756,10 @@ class ProxyManager:
         # 设置对应的认证环境变量
         if auth_method == "auth_token":
             merged_config["env"]["ANTHROPIC_AUTH_TOKEN"] = proxy.auth_token
-        else:
+        elif auth_method == "api_key":
             merged_config["env"]["ANTHROPIC_API_KEY"] = proxy.api_key
+        elif auth_method == "api_key_helper":
+            merged_config["apiKeyHelper"] = proxy.api_key_helper
 
         # 设置基础URL
         merged_config["env"]["ANTHROPIC_BASE_URL"] = proxy.base_url
@@ -780,44 +782,6 @@ class ProxyManager:
             merged_config["permissions"] = {"allow": [], "deny": []}
 
         return merged_config
-
-    def _generate_claude_code_config(self, proxy: ProxyServer) -> Dict[str, Any]:
-        """生成 Claude Code 配置
-
-        Args:
-            proxy: 代理服务器对象
-
-        Returns:
-            Dict[str, Any]: Claude Code 配置字典
-        """
-        # 根据认证方式选择要设置的环境变量
-        auth_method = proxy.get_auth_method()
-
-        if auth_method == "auth_token":
-            env_config = {
-                "ANTHROPIC_AUTH_TOKEN": proxy.auth_token,
-                "ANTHROPIC_BASE_URL": proxy.base_url,
-                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
-            }
-        else:
-            env_config = {
-                "ANTHROPIC_API_KEY": proxy.api_key,
-                "ANTHROPIC_BASE_URL": proxy.base_url,
-                "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": 1,
-            }
-
-        # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
-        if proxy.bigmodel:
-            env_config["ANTHROPIC_MODEL"] = proxy.bigmodel
-
-        # 如果配置了小模型，添加 ANTHROPIC_SMALL_FAST_MODEL 环境变量
-        if proxy.smallmodel:
-            env_config["ANTHROPIC_SMALL_FAST_MODEL"] = proxy.smallmodel
-
-        return {
-            "env": env_config,
-            "permissions": {"allow": [], "deny": []},
-        }
 
     def reload_config(self) -> None:
         """重新加载配置文件

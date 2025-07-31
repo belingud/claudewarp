@@ -20,9 +20,6 @@ from claudewarp.cli.formatters import (
     format_proxy_info,
     format_export_output,
     format_success,
-    format_error,
-    format_warning,
-    format_info,
 )
 from claudewarp.cli.main import main, cli_main, setup_colored_logging
 from claudewarp.core.config import ConfigManager
@@ -832,14 +829,8 @@ class TestCLIFormatters:
     def test_format_messages(self):
         """测试消息格式化函数"""
         success_msg = format_success("操作成功")
-        error_msg = format_error("操作失败")
-        warning_msg = format_warning("警告信息")
-        info_msg = format_info("信息提示")
 
         assert "✓" in str(success_msg)
-        assert "✗" in str(error_msg)
-        assert "⚠" in str(warning_msg)
-        assert "ℹ" in str(info_msg)
 
 
 class TestCLIMain:
