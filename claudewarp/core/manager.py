@@ -153,12 +153,14 @@ class ProxyManager:
 
         except ValueError as e:
             # Pydantic验证错误
-            raise ValidationError(f"代理服务器数据验证失败: {e}") from None
+            self.logger.error(
+                f"Data> name: {name}, base_url: {base_url}, api_key: {'***' if api_key else 'empty'}," + 
+                f" auth_token: {'***' if auth_token else 'empty'}, api_key_helper: {'***' if api_key_helper else 'empty'}"
+            )
+            raise e from None
         except Exception as e:
             self.logger.error(f"添加代理服务器失败: {e}")
-            raise OperationError(
-                f"添加代理服务器失败: {e}", operation="add_proxy", target=name
-            ) from None
+            raise e from None
 
     def remove_proxy(self, name: str) -> bool:
         """删除代理服务器

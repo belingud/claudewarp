@@ -319,6 +319,7 @@ class BaseProxyDialog(QDialog):
         tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
 
         api_key, auth_token, api_key_helper = self.get_auth_credentials()
+        print(f"api_key: {api_key}, auth_token: {auth_token}, api_key_helper: {api_key_helper}")
 
         return {
             "name": self.name_edit.text().strip(),
@@ -357,6 +358,7 @@ class AddProxyDialog(BaseProxyDialog):
         try:
             # 获取并验证数据
             proxy_data = self.get_common_data()
+            print(f"proxy_data: {proxy_data}")
 
             # 使用Pydantic验证数据
             ProxyServer(**proxy_data)

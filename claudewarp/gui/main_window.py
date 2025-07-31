@@ -763,7 +763,7 @@ class MainWindow(QMainWindow):
         self.logger.info("开始添加新配置")
         dialog = AddProxyDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            proxy_data = dialog.get_proxy_data()
+            proxy_data = dialog.get_common_data()
             self.logger.debug(f"获取配置数据: {proxy_data['name']}")
             try:
                 # 直接传递参数给add_proxy方法
@@ -771,6 +771,8 @@ class MainWindow(QMainWindow):
                     name=proxy_data["name"],
                     base_url=proxy_data["base_url"],
                     api_key=proxy_data["api_key"],
+                    auth_token=proxy_data["auth_token"],
+                    api_key_helper=proxy_data["api_key_helper"],
                     description=proxy_data.get("description", ""),
                     tags=proxy_data.get("tags", []),
                     bigmodel=proxy_data.get("bigmodel"),
@@ -818,6 +820,8 @@ class MainWindow(QMainWindow):
                         name=new_name,
                         base_url=update_data["base_url"],
                         api_key=update_data["api_key"],
+                        auth_token=update_data["auth_token"],
+                        api_key_helper=update_data["api_key_helper"],
                         description=update_data["description"],
                         tags=update_data["tags"],
                         bigmodel=update_data["bigmodel"],

@@ -112,17 +112,7 @@ gui = [
     "pyside6>=6.5.0,<6.8.0",
     "pyside6-fluent-widgets>=1.7.6,<2.0.0",
     "darkdetect>=0.8.0",
-    "pyinstaller>=6.14.0",
     "imageio>=2.35.1",
-]
-gui-build = [
-    # GUI runtime dependencies only (excludes CLI)
-    "pydantic>=2.0.0,<3.0.0",
-    "toml>=0.10.0",
-    "colorlog>=6.0.0",
-    "pyside6>=6.5.0,<6.8.0",
-    "pyside6-fluent-widgets>=1.7.6,<2.0.0",
-    "darkdetect>=0.8.0",
 ]
 dev = [
     "pytest>=7.0.0",
@@ -135,10 +125,4 @@ dev = [
     "nuitka>=2.0.0,<3.0.0",
     "pyright>=1.1.403",
     "deptry>=0.20.0",
-]
-
-docs = [
-    "mkdocs>=1.4.0",
-    "mkdocs-material>=9.0.0",
-    "mkdocstrings[python]>=0.20.0",
 ]
