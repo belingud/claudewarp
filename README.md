@@ -46,6 +46,14 @@
 
 ---
 
+0731更新
+
+1. v0.0.40版本增加了apiKeyHelper的配置，api key、auth token、apiKeyHelper三者互斥
+2. 使用了更为先进的打包技术，减小应用体积
+3. cli版本同步发布
+
+---
+
 0729更新
 
 1. v0.0.34版本加上了auth token的配置，和api key互斥，只能配置一个
