@@ -61,12 +61,8 @@ class BaseProxyDialog(QDialog):
         # 初始化UI组件
         self.name_edit = None
         self.url_edit = None
-        self.api_key_radio = None
-        self.auth_token_radio = None
-        self.api_key_helper_radio = None
-        self.key_edit = None
-        self.auth_token_edit = None
-        self.api_key_helper_edit = None
+        self.auth_method_combo = None
+        self.credential_edit = None
         self.show_key_check = None
         self.desc_edit = None
         self.tags_edit = None
@@ -108,39 +104,18 @@ class BaseProxyDialog(QDialog):
         self.set_input_min_width(self.url_edit)
         form_layout.addRow("代理URL *:", self.url_edit)
 
-        # 认证方式选择
-        auth_layout = QHBoxLayout()
-        self.api_key_radio = CheckBox("API KEY")
-        self.auth_token_radio = CheckBox("AUTH TOKEN")
-        self.api_key_helper_radio = CheckBox("API KEY HELPER")
-        self.api_key_radio.setChecked(True)
-        auth_layout.addWidget(self.api_key_radio)
-        auth_layout.addWidget(self.auth_token_radio)
-        auth_layout.addWidget(self.api_key_helper_radio)
-        auth_layout.addStretch()
-        form_layout.addRow("认证方式 *:", auth_layout)
+        # 认证方式
+        self.auth_method_combo = ComboBox()
+        self.auth_method_combo.addItems(["API KEY", "AUTH TOKEN", "API KEY HELPER"])
+        self.set_input_min_width(self.auth_method_combo)
+        form_layout.addRow("认证方式 *:", self.auth_method_combo)
 
-        # API密钥
-        self.key_edit = LineEdit()
-        self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.key_edit.setPlaceholderText("输入API Key")
-        self.set_input_min_width(self.key_edit)
-        form_layout.addRow("API Key :", self.key_edit)
-
-        # Auth令牌
-        self.auth_token_edit = LineEdit()
-        self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
-        self.auth_token_edit.setPlaceholderText("AuthToken")
-        self.set_input_min_width(self.auth_token_edit)
-        self.auth_token_edit.setEnabled(False)
-        form_layout.addRow("AuthToken :", self.auth_token_edit)
-
-        # API密钥助手
-        self.api_key_helper_edit = LineEdit()
-        self.api_key_helper_edit.setPlaceholderText("API Key Helper")
-        self.set_input_min_width(self.api_key_helper_edit)
-        self.api_key_helper_edit.setEnabled(False)
-        form_layout.addRow("API Key Helper :", self.api_key_helper_edit)
+        # 凭据
+        self.credential_edit = LineEdit()
+        self.credential_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self.credential_edit.setPlaceholderText("选择认证方式后输入凭据")
+        self.set_input_min_width(self.credential_edit)
+        form_layout.addRow("凭据 *:", self.credential_edit)
 
         # 显示密钥复选框
         self.show_key_check = CheckBox("显示密钥")
@@ -176,7 +151,7 @@ class BaseProxyDialog(QDialog):
 
         # 大模型
         self.bigmodel_edit = LineEdit()
-        self.bigmodel_edit.setPlaceholderText("如: claude-3-5-sonnet-20241022")
+        self.bigmodel_edit.setPlaceholderText("如: claude-sonnet-4-20250514")
         self.set_input_min_width(self.bigmodel_edit)
         form_layout.addRow("大模型:", self.bigmodel_edit)
 
@@ -219,16 +194,12 @@ class BaseProxyDialog(QDialog):
         self.show_key_check.toggled.connect(self.toggle_key_visibility)
 
         # 认证方式切换
-        self.api_key_radio.toggled.connect(self.on_auth_method_changed)
-        self.auth_token_radio.toggled.connect(self.on_auth_method_changed)
-        self.api_key_helper_radio.toggled.connect(self.on_auth_method_changed)
+        self.auth_method_combo.currentTextChanged.connect(self.on_auth_method_changed)
 
         # 实时验证
         self.name_edit.textChanged.connect(self.validate_input)
         self.url_edit.textChanged.connect(self.validate_input)
-        self.key_edit.textChanged.connect(self.validate_input)
-        self.auth_token_edit.textChanged.connect(self.validate_input)
-        self.api_key_helper_edit.textChanged.connect(self.validate_input)
+        self.credential_edit.textChanged.connect(self.validate_input)
 
         # 初始验证
         self.validate_input()
@@ -236,58 +207,28 @@ class BaseProxyDialog(QDialog):
     def toggle_key_visibility(self, visible: bool):
         """切换密钥显示状态"""
         if visible:
-            self.key_edit.setEchoMode(QLineEdit.EchoMode.Normal)
-            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.credential_edit.setEchoMode(QLineEdit.EchoMode.Normal)
         else:
-            self.key_edit.setEchoMode(QLineEdit.EchoMode.Password)
-            self.auth_token_edit.setEchoMode(QLineEdit.EchoMode.Password)
+            self.credential_edit.setEchoMode(QLineEdit.EchoMode.Password)
 
-    def on_auth_method_changed(self, checked: bool):
+    def on_auth_method_changed(self, auth_method: str):
         """处理认证方式切换"""
-        sender = self.sender()
-        if checked:
-            if sender == self.api_key_radio:
-                self.key_edit.setEnabled(True)
-                self.auth_token_edit.setEnabled(False)
-                self.api_key_helper_edit.setEnabled(False)
-                self.auth_token_radio.setChecked(False)
-                self.api_key_helper_radio.setChecked(False)
-            elif sender == self.auth_token_radio:
-                self.key_edit.setEnabled(False)
-                self.auth_token_edit.setEnabled(True)
-                self.api_key_helper_edit.setEnabled(False)
-                self.api_key_radio.setChecked(False)
-                self.api_key_helper_radio.setChecked(False)
-            elif sender == self.api_key_helper_radio:
-                self.key_edit.setEnabled(False)
-                self.auth_token_edit.setEnabled(False)
-                self.api_key_helper_edit.setEnabled(True)
-                self.api_key_radio.setChecked(False)
-                self.auth_token_radio.setChecked(False)
-        else:
-            # 如果用户尝试取消选择当前选项，阻止这个操作
-            # 检查是否还有其他选项被选中
-            if not (self.api_key_radio.isChecked() or self.auth_token_radio.isChecked() or self.api_key_helper_radio.isChecked()):
-                # 如果没有其他选项被选中，恢复当前选项的选中状态
-                sender.setChecked(True)
-                return
+        placeholders = {
+            "API KEY": "输入API Key",
+            "AUTH TOKEN": "输入AuthToken",
+            "API KEY HELPER": "输入API Key Helper",
+        }
+        self.credential_edit.setPlaceholderText(placeholders.get(auth_method, "输入凭据"))
         self.validate_input()
 
     def validate_input(self):
         """验证输入"""
         name = self.name_edit.text().strip()
         url = self.url_edit.text().strip()
-        key = self.key_edit.text().strip()
-        auth_token = self.auth_token_edit.text().strip()
-        api_key_helper = self.api_key_helper_edit.text().strip()
+        credential = self.credential_edit.text().strip()
 
         # 检查必填字段
-        if self.api_key_radio.isChecked():
-            valid = bool(name and url and key)
-        elif self.auth_token_radio.isChecked():
-            valid = bool(name and url and auth_token)
-        else:
-            valid = bool(name and url and api_key_helper)
+        valid = bool(name and url and credential)
 
         # 启用/禁用确定按钮
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setEnabled(valid)
@@ -298,19 +239,13 @@ class BaseProxyDialog(QDialog):
 
     def get_auth_credentials(self) -> tuple[Optional[str], Optional[str], Optional[str]]:
         """获取认证凭据"""
-        if self.api_key_radio.isChecked():
-            api_key = self.key_edit.text().strip()
-            auth_token = None
-            api_key_helper = None
-        elif self.auth_token_radio.isChecked():
-            api_key = None
-            auth_token = self.auth_token_edit.text().strip()
-            api_key_helper = None
-        else:
-            api_key = None
-            auth_token = None
-            api_key_helper = self.api_key_helper_edit.text().strip()
-        
+        auth_method = self.auth_method_combo.currentText()
+        credential = self.credential_edit.text().strip()
+
+        api_key = credential if auth_method == "API KEY" else None
+        auth_token = credential if auth_method == "AUTH TOKEN" else None
+        api_key_helper = credential if auth_method == "API KEY HELPER" else None
+
         return api_key, auth_token, api_key_helper
 
     def get_common_data(self) -> Dict[str, Any]:
@@ -319,7 +254,6 @@ class BaseProxyDialog(QDialog):
         tags = [tag.strip() for tag in tags_text.split(",") if tag.strip()] if tags_text else []
 
         api_key, auth_token, api_key_helper = self.get_auth_credentials()
-        print(f"api_key: {api_key}, auth_token: {auth_token}, api_key_helper: {api_key_helper}")
 
         return {
             "name": self.name_edit.text().strip(),
@@ -388,37 +322,23 @@ class EditProxyDialog(BaseProxyDialog):
         """加载代理数据"""
         self.name_edit.setText(self.original_proxy.name)
         self.url_edit.setText(self.original_proxy.base_url)
-        self.key_edit.setText(self.original_proxy.api_key)
-        self.auth_token_edit.setText(self.original_proxy.auth_token or "")
-        self.api_key_helper_edit.setText(self.original_proxy.api_key_helper or "")
         self.desc_edit.setText(self.original_proxy.description)
         self.tags_edit.setText(", ".join(self.original_proxy.tags))
         self.active_check.setChecked(self.original_proxy.is_active)
         self.bigmodel_edit.setText(self.original_proxy.bigmodel or "")
         self.smallmodel_edit.setText(self.original_proxy.smallmodel or "")
 
-        # 设置认证方式
+        # 设置认证方式和凭据
         if self.original_proxy.auth_token:
-            self.auth_token_radio.setChecked(True)
-            self.api_key_radio.setChecked(False)
-            self.api_key_helper_radio.setChecked(False)
-            self.key_edit.setEnabled(False)
-            self.auth_token_edit.setEnabled(True)
-            self.api_key_helper_edit.setEnabled(False)
+            self.auth_method_combo.setCurrentText("AUTH TOKEN")
+            self.credential_edit.setText(self.original_proxy.auth_token)
         elif self.original_proxy.api_key_helper:
-            self.api_key_helper_radio.setChecked(True)
-            self.api_key_radio.setChecked(False)
-            self.auth_token_radio.setChecked(False)
-            self.key_edit.setEnabled(False)
-            self.auth_token_edit.setEnabled(False)
-            self.api_key_helper_edit.setEnabled(True)
+            self.auth_method_combo.setCurrentText("API KEY HELPER")
+            self.credential_edit.setText(self.original_proxy.api_key_helper)
         else:
-            self.api_key_radio.setChecked(True)
-            self.auth_token_radio.setChecked(False)
-            self.api_key_helper_radio.setChecked(False)
-            self.key_edit.setEnabled(True)
-            self.auth_token_edit.setEnabled(False)
-            self.api_key_helper_edit.setEnabled(False)
+            self.auth_method_combo.setCurrentText("API KEY")
+            self.credential_edit.setText(self.original_proxy.api_key or "")
+
 
     def accept_dialog(self):
         """确认对话框"""

@@ -247,6 +247,7 @@ class MainWindow(QMainWindow):
         self.proxy_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.proxy_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.proxy_table.setSortingEnabled(True)
+        self.proxy_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # 设置统一的表格字体
         table_font = QFont()
@@ -657,7 +658,6 @@ class MainWindow(QMainWindow):
 <b>总配置数量:</b> {status["total_proxies"]}<br>
 <b>活跃配置:</b> {status["active_proxies"]}<br>
 <b>未启用配置:</b> {inactive_proxies}<br>
-<b>配置版本:</b> {status["config_version"]}<br>
 <b>最后更新:</b> {self.format_datetime(status["config_updated_at"])}
             """.strip()
 
