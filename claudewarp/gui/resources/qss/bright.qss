@@ -1,76 +1,74 @@
-/* bright.qss - Modern Bright Theme */
+/* bright.qss - Modern & Refined Bright Theme */
 
 /* Global Settings */
 QWidget {
-    background-color: #f3f4f6; /* A very light grey, softer than pure white */
-    color: #1f2937; /* Dark grey for text, better than pure black */
+    background-color: #f8f9fa; /* A softer, more neutral light grey */
+    color: #212529; /* Standard dark grey for better readability */
     font-family: "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
     border: none;
 }
 
 /* Main Window and Base Widgets */
 QMainWindow, QFrame, QGroupBox, QScrollArea, QDialog {
-    background-color: #f3f4f6;
-    color: #1f2937;
+    background-color: #f8f9fa;
+    color: #212529;
 }
 
 /* Card Widget from QFluentWidgets */
 CardWidget {
     background-color: #ffffff; /* Pure white for cards to stand out */
-    border-radius: 8px;
-    border: 1px solid #e5e7eb; /* Light border */
+    border-radius: 12px; /* Larger radius for a modern look */
+    border: 1px solid #dee2e6; /* Softer border color */
 }
 
 /* Buttons */
 QPushButton {
-    background-color: #ffffff;
-    color: #374151;
-    padding: 8px 16px;
-    border-radius: 5px;
-    border: 1px solid #d1d5db;
-    font-weight: 500;
+    background-color: #e9ecef; /* A subtle light grey */
+    color: #212529;
+    padding: 10px 20px; /* More padding for a better feel */
+    border-radius: 8px; /* Consistent with CardWidget */
+    border: none; /* Flatter design */
+    font-weight: 600; /* Slightly bolder */
 }
 
 QPushButton:hover {
-    background-color: #f9fafb;
-    border-color: #9ca3af;
+    background-color: #dee2e6; /* A bit darker on hover */
 }
 
 QPushButton:pressed {
-    background-color: #e5e7eb;
+    background-color: #ced4da; /* Even darker when pressed */
 }
 
 /* Primary Button Style */
 PrimaryPushButton, QPushButton[class="PrimaryPushButton"], QPushButton[styleClass="primary"] {
-    background-color: #0078d4; /* Consistent vibrant blue */
+    background-color: #007bff; /* A more modern, vibrant blue */
     color: white;
-    border: 1px solid #0078d4;
-    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700; /* Bolder for primary action */
 }
 
 PrimaryPushButton:hover, QPushButton[class="PrimaryPushButton"]:hover, QPushButton[styleClass="primary"]:hover {
-    background-color: #1085e4;
-    border-color: #1085e4;
+    background-color: #0069d9;
 }
 
 PrimaryPushButton:pressed, QPushButton[class="PrimaryPushButton"]:pressed, QPushButton[styleClass="primary"]:pressed {
-    background-color: #006ac4;
-    border-color: #006ac4;
+    background-color: #0056b3;
 }
 
 /* Input Fields */
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: #ffffff;
-    color: #1f2937;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
-    padding: 6px;
-    selection-background-color: #0078d4;
+    color: #212529;
+    border: 1px solid #ced4da;
+    border-radius: 8px; /* Consistent with buttons */
+    padding: 8px 12px; /* More vertical padding */
+    selection-background-color: #007bff;
     selection-color: white;
 }
 
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
-    border: 1px solid #0078d4;
+    border: 1px solid #007bff; /* Use the primary color for focus */
 }
 
 /* Labels */
@@ -82,20 +80,21 @@ QLabel, TitleLabel, StrongBodyLabel, BodyLabel, CaptionLabel {
 /* Table Widget */
 QTableWidget {
     background-color: #ffffff;
-    color: #1f2937;
-    gridline-color: #e5e7eb;
-    selection-background-color: #0078d4;
+    color: #212529;
+    gridline-color: #dee2e6; /* Softer grid lines */
+    selection-background-color: #007bff;
     selection-color: white;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border-radius: 12px; /* Consistent with CardWidget */
+    border: 1px solid #dee2e6;
 }
 
 QHeaderView::section {
-    background-color: #f9fafb;
-    color: #374151;
-    padding: 8px;
+    background-color: #f8f9fa; /* Match global background */
+    color: #495057; /* Slightly lighter header text */
+    padding: 12px 8px; /* More padding */
     border: none;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
 }
 
 /* Menu Bar and Menu */
@@ -133,13 +132,13 @@ QMenu::item:selected {
 /* ComboBox */
 QComboBox {
     background-color: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 5px;
-    padding: 6px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 8px 12px;
 }
 
 QComboBox:hover {
-    border-color: #9ca3af;
+    border-color: #adb5bd;
 }
 
 QComboBox::drop-down {
@@ -148,27 +147,28 @@ QComboBox::drop-down {
 
 QComboBox QAbstractItemView {
     background-color: #ffffff;
-    border: 1px solid #d1d5db;
-    selection-background-color: #0078d4;
-    color: #1f2937;
+    border: 1px solid #ced4da;
+    selection-background-color: #007bff;
+    color: #212529;
+    border-radius: 8px;
 }
 
 /* ScrollBar */
 QScrollBar:vertical {
-    background: #f3f4f6;
-    width: 12px;
+    background: transparent; /* Make it less intrusive */
+    width: 10px;
     margin: 0;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:vertical {
-    background: #d1d5db;
-    min-height: 25px;
-    border-radius: 6px;
+    background: #ced4da;
+    min-height: 30px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #9ca3af;
+    background: #adb5bd;
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
@@ -177,20 +177,20 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 }
 
 QScrollBar:horizontal {
-    background: #f3f4f6;
-    height: 12px;
+    background: transparent;
+    height: 10px;
     margin: 0;
-    border-radius: 6px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:horizontal {
-    background: #d1d5db;
-    min-width: 25px;
-    border-radius: 6px;
+    background: #ced4da;
+    min-width: 30px;
+    border-radius: 5px;
 }
 
 QScrollBar::handle:horizontal:hover {
-    background: #9ca3af;
+    background: #adb5bd;
 }
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
