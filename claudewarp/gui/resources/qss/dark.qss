@@ -4,7 +4,6 @@
 QWidget {
     background-color: #212529; /* A deep, neutral dark grey */
     color: #f8f9fa; /* Soft white for text */
-    font-family: "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
     border: none;
 }
 

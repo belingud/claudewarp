@@ -13,7 +13,7 @@ from typing import Dict, Optional
 from pydantic import ValidationError
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -248,13 +248,6 @@ class MainWindow(QMainWindow):
         self.proxy_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.proxy_table.setSortingEnabled(True)
         self.proxy_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-
-        # 设置统一的表格字体
-        table_font = QFont()
-        table_font.setFamily("")  # 使用系统默认字体族
-        table_font.setPointSize(-1)  # 使用系统默认字体大小
-        table_font.setWeight(QFont.Weight.Normal)  # 默认字重
-        self.proxy_table.setFont(table_font)
 
         # 设置列宽
         header = self.proxy_table.horizontalHeader()

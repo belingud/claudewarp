@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QFont, QFontDatabase, QIcon
 from PySide6.QtWidgets import QApplication
 
 from claudewarp.core.utils import LevelAlignFilter
@@ -69,6 +69,28 @@ def setup_logging(debug: bool = False) -> None:
         )
 
 
+def set_default_font(app: QApplication) -> None:
+    """根据操作系统设置默认字体，避免字体缺失警告"""
+    font_families = []
+    if sys.platform == "win32":
+        # Windows: 优先使用微软雅黑UI
+        font_families = ["Microsoft YaHei UI", "Tahoma"]
+    elif sys.platform == "darwin":
+        # macOS: 优先使用苹方
+        font_families = ["PingFang SC", "Helvetica Neue", "Arial"]
+    else:
+        # Linux: 常见中文字体
+        font_families = ["Noto Sans CJK SC", "WenQuanYi Micro Hei", "sans-serif"]
+
+    for family in font_families:
+        if family in QFontDatabase.families():
+            app.setFont(QFont(family, 10))
+            logging.getLogger(__name__).info(f"设置默认字体为: {family}")
+            return
+
+    logging.getLogger(__name__).warning("未找到推荐的默认字体，使用系统默认字体。")
+
+
 def main(debug: bool = False) -> int:
     """GUI主程序入口"""
     # 设置日志
@@ -81,7 +103,8 @@ def main(debug: bool = False) -> int:
         # 创建QApplication实例
         logger.debug("创建 QApplication 实例")
         app = QApplication(sys.argv)
-
+        set_default_font(app)
+ 
         # 设置应用程序属性
         logger.debug("设置应用程序属性")
         app.setApplicationName("Claude Proxy Manager")
