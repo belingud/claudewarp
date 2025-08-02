@@ -23,7 +23,7 @@
     <img src="https://img.shields.io/badge/Python-3.8%2B-brightgreen" alt="Python Version">
   </a>
   <a href="https://github.com/belingud/claudewarp/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/belingud/claudewarp/build.yml?branch=master" alt="Build Status">
+    <img src="https://img.shields.io/github/actions/workflow/status/belingud/claudewarp/build.yml" alt="Build Status">
   </a>
 </p>
 
@@ -43,6 +43,15 @@
 ![Light](artwork/light.png)
 
 ![Dark](artwork/dark.png)
+
+![edit](artwork/edit.png)
+
+---
+
+0802更新
+
+1. 修复修改和备份的逻辑问题
+2. 美化界面
 
 ---
 
