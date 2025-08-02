@@ -90,7 +90,7 @@ class MainWindow(QMainWindow):
 
         # 初始化主题管理器
         self.logger.debug("初始化主题管理器")
-        self.theme_manager = get_theme_manager()
+        self.theme_manager = get_theme_manager(self.proxy_manager)
         self.theme_manager.theme_changed.connect(self.on_theme_changed)
 
         # 应用暗色模式样式表

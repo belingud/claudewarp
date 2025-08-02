@@ -783,6 +783,31 @@ class ProxyManager:
 
         return merged_config
 
+    def get_theme_setting(self) -> str:
+        """获取主题设置
+
+        Returns:
+            str: 主题名称 ('light', 'dark', 'auto')
+        """
+        return self.config.settings.get("theme", "auto")
+
+    def save_theme_setting(self, theme_mode: str) -> None:
+        """保存主题设置
+
+        Args:
+            theme_mode: 主题模式 ('light', 'dark', 'auto')
+
+        Raises:
+            ConfigError: 配置保存失败
+        """
+        try:
+            self.config.settings["theme"] = theme_mode
+            self._save_config()
+            self.logger.info(f"主题设置已保存: {theme_mode}")
+        except Exception as e:
+            self.logger.error(f"保存主题设置失败: {e}")
+            raise ConfigError(f"保存主题设置失败: {e}") from None
+
     def reload_config(self) -> None:
         """重新加载配置文件
 

@@ -14,8 +14,10 @@ try:
 except ImportError:
     winreg = None
 
-from PySide6.QtCore import QObject, QSettings, QTimer, Signal
+from PySide6.QtCore import QObject, QTimer, Signal
 from PySide6.QtWidgets import QApplication
+
+from claudewarp.core.manager import ProxyManager
 
 try:
     from qfluentwidgets import Theme as QFluentTheme  # type: ignore
@@ -61,12 +63,10 @@ class ThemeManager(QObject):
     # 主题变化信号
     theme_changed = Signal(str)  # 发送新主题名称
 
-    def __init__(self, parent=None):
+    def __init__(self, proxy_manager: ProxyManager, parent=None):
         super().__init__(parent)
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        # 设置存储
-        self.settings = QSettings()
+        self.proxy_manager = proxy_manager
 
         # QSS 文件路径
         self.qss_dir = Path(__file__).parent / "resources" / "qss"
@@ -129,17 +129,20 @@ class ThemeManager(QObject):
         theme_mode_str = ""
         try:
             # 从设置中加载主题模式
-            theme_mode_str = self.settings.value("theme/mode", ThemeMode.AUTO.value)
+            theme_mode_str = self.proxy_manager.get_theme_setting()
             self._theme_mode = ThemeMode(theme_mode_str)
             self.logger.debug(f"从设置中加载主题模式: {self._theme_mode.value}")
-        except ValueError:
+        except (ValueError, AttributeError):
             self.logger.warning(f"无效的主题模式设置: {theme_mode_str}，使用默认值")
             self._theme_mode = ThemeMode.AUTO
 
     def _save_settings(self):
         """保存主题设置"""
-        self.settings.setValue("theme/mode", self._theme_mode.value)
-        self.logger.debug(f"保存主题模式设置: {self._theme_mode.value}")
+        try:
+            self.proxy_manager.save_theme_setting(self._theme_mode.value)
+            self.logger.debug(f"保存主题模式设置: {self._theme_mode.value}")
+        except Exception as e:
+            self.logger.error(f"通过 ProxyManager 保存主题设置失败: {e}")
 
     def _init_theme(self):
         """初始化主题"""
@@ -544,11 +547,15 @@ class ThemeManager(QObject):
 _theme_manager_instance: Optional[ThemeManager] = None
 
 
-def get_theme_manager() -> ThemeManager:
+def get_theme_manager(proxy_manager: Optional[ProxyManager] = None) -> ThemeManager:
     """获取主题管理器单例实例"""
     global _theme_manager_instance
     if _theme_manager_instance is None:
-        _theme_manager_instance = ThemeManager()
+        if proxy_manager is None:
+            # 在某些情况下（如CLI），可能没有proxy_manager
+            # 但对于GUI，必须提供
+            raise ValueError("首次获取ThemeManager时必须提供ProxyManager实例")
+        _theme_manager_instance = ThemeManager(proxy_manager)
     return _theme_manager_instance
 
 
