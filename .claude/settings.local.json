@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(python:*)",
-      "Bash(uv run ruff format:*)"
+      "Bash(uv run ruff format:*)",
+      "Bash(uv run pytest:*)"
     ],
     "deny": []
   }
