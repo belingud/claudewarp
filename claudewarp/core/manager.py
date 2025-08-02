@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from pydantic import ValidationError as PydanticValidationError
+
 from .config import ConfigManager
 from .exceptions import (
     ConfigError,
@@ -60,22 +62,35 @@ class ProxyManager:
         Raises:
             ConfigError: 配置加载失败
         """
+        from .exceptions import ConfigFileCorruptedError
+        
         try:
             self._config = self.config_manager.load_config()
             self.logger.debug(f"已加载配置，包含 {len(self._config.proxies)} 个代理服务器")
+            return self._config
+        except ConfigFileCorruptedError as e:
+            # 配置文件损坏时，创建默认配置进行恢复
+            self.logger.warning(f"配置文件损坏，正在创建默认配置: {e}")
+            self._config = self.config_manager._create_default_config()
+            # 保存默认配置到文件
+            self.config_manager.save_config(self._config)
+            self.logger.info("已创建并保存默认配置")
             return self._config
         except Exception as e:
             self.logger.error(f"加载配置失败: {e}")
             raise ConfigError(f"初始化代理管理器失败: {e}") from None
 
-    def _save_config(self) -> None:
+    def _save_config(self, backup: Optional[bool] = None) -> None:
         """保存配置文件
+
+        Args:
+            backup: 是否进行备份，None时使用默认设置
 
         Raises:
             ConfigError: 配置保存失败
         """
         try:
-            success = self.config_manager.save_config(self.config)
+            success = self.config_manager.save_config(self.config, backup=backup)
             if not success:
                 raise ConfigError("保存配置文件失败")
             self.logger.debug("配置已保存")
@@ -87,7 +102,7 @@ class ProxyManager:
         self,
         name: str,
         base_url: str,
-        api_key: str,
+        api_key: Optional[str] = None,
         description: str = "",
         tags: Optional[List[str]] = None,
         is_active: bool = True,
@@ -145,22 +160,23 @@ class ProxyManager:
             if set_as_current:
                 self.config.set_current_proxy(name)
 
-            # 保存配置
-            self._save_config()
+            # 保存配置（代理配置变更需要备份）
+            self._save_config(backup=True)
 
             self.logger.info(f"已添加代理服务器: {name}")
             return proxy
 
-        except ValueError as e:
+        except (ValueError, PydanticValidationError) as e:
             # Pydantic验证错误
             self.logger.error(
                 f"Data> name: {name}, base_url: {base_url}, api_key: {'***' if api_key else 'empty'},"
                 + f" auth_token: {'***' if auth_token else 'empty'}, api_key_helper: {'***' if api_key_helper else 'empty'}"
             )
-            raise e from None
+            # 转换为我们的 ValidationError
+            raise ValidationError(str(e)) from None
         except Exception as e:
             self.logger.error(f"添加代理服务器失败: {e}")
-            raise e from None
+            raise ConfigError(f"添加代理服务器失败: {e}") from None
 
     def remove_proxy(self, name: str) -> bool:
         """删除代理服务器
@@ -183,8 +199,8 @@ class ProxyManager:
             success = self.config.remove_proxy(name)
 
             if success:
-                # 保存配置
-                self._save_config()
+                # 保存配置（代理配置变更需要备份）
+                self._save_config(backup=True)
                 self.logger.info(f"已删除代理服务器: {name}")
                 return True
             else:
@@ -336,6 +352,32 @@ class ProxyManager:
         try:
             proxy = self.config.proxies[name]
 
+            # 检查哪些字段实际发生了变化
+            changed_fields = []
+            if base_url is not None and base_url != proxy.base_url:
+                changed_fields.append("base_url")
+            if api_key is not None and api_key != proxy.api_key:
+                changed_fields.append("api_key")
+            if auth_token is not None and auth_token != proxy.auth_token:
+                changed_fields.append("auth_token")
+            if api_key_helper is not None and api_key_helper != proxy.api_key_helper:
+                changed_fields.append("api_key_helper")
+            if description is not None and description != proxy.description:
+                changed_fields.append("description")
+            if tags is not None and tags != proxy.tags:
+                changed_fields.append("tags")
+            if is_active is not None and is_active != proxy.is_active:
+                changed_fields.append("is_active")
+            if bigmodel is not None and bigmodel != proxy.bigmodel:
+                changed_fields.append("bigmodel")
+            if smallmodel is not None and smallmodel != proxy.smallmodel:
+                changed_fields.append("smallmodel")
+
+            # 如果没有实际变更，直接返回现有代理
+            if not changed_fields:
+                self.logger.debug(f"代理 '{name}' 无需更新")
+                return proxy
+
             # 准备更新数据
             update_data = {
                 "name": name,
@@ -353,22 +395,28 @@ class ProxyManager:
                 # 如果设置了auth_token，则清空api_key
                 update_data["auth_token"] = auth_token
                 update_data["api_key"] = None
+                update_data["api_key_helper"] = None
             elif api_key is not None:
                 # 如果设置了api_key，则清空auth_token
                 update_data["api_key"] = api_key
                 update_data["auth_token"] = None
+                update_data["api_key_helper"] = None
             elif api_key_helper is not None:
-                # 如果设置了api_key_helper，则清空auth_token
+                # 如果设置了api_key_helper，则清空其他认证方式
                 update_data["api_key_helper"] = api_key_helper
                 update_data["auth_token"] = None
+                update_data["api_key"] = None
             else:
                 # 保持原来的认证方式
                 update_data["api_key"] = proxy.api_key
                 update_data["auth_token"] = proxy.auth_token
                 update_data["api_key_helper"] = proxy.api_key_helper
 
-            # 创建新的代理对象（会自动进行数据验证和更新时间戳）
-            updated_proxy = ProxyServer(**update_data)
+            # 使用copy_with_updates方法创建新的代理对象（会自动更新时间戳）
+            updated_proxy = proxy.copy_with_updates(**{
+                k: v for k, v in update_data.items() 
+                if k != "name" and k != "created_at"  # 排除不需要更新的字段
+            })
 
             # 更新配置
             self.config.proxies[name] = updated_proxy
@@ -386,10 +434,10 @@ class ProxyManager:
                     self.config.current_proxy = None
                     self.logger.warning(f"代理 '{name}' 被禁用且无其他可用代理")
 
-            # 保存配置
-            self._save_config()
+            # 保存配置（代理配置变更需要备份）
+            self._save_config(backup=True)
 
-            self.logger.info(f"已更新代理服务器: {name}")
+            self.logger.info(f"已更新代理服务器: {name}，变更字段: {', '.join(changed_fields)}")
             return updated_proxy
 
         except ValueError as e:
@@ -801,8 +849,17 @@ class ProxyManager:
             ConfigError: 配置保存失败
         """
         try:
-            self.config.settings["theme"] = theme_mode
-            self._save_config()
+            # 检查主题设置是否实际发生变化
+            current_theme = self.config.settings.get("theme", "auto")
+            if current_theme == theme_mode:
+                self.logger.debug(f"主题设置无需更新: {theme_mode}")
+                return
+
+            # 使用copy_with_settings_update方法更新settings（不需要备份）
+            self._config = self.config.copy_with_settings_update(theme=theme_mode)
+            
+            # 保存配置（settings变更不需要备份）
+            self._save_config(backup=False)
             self.logger.info(f"主题设置已保存: {theme_mode}")
         except Exception as e:
             self.logger.error(f"保存主题设置失败: {e}")

@@ -19,7 +19,9 @@ from .exceptions import (
     ConfigPermissionError,
     SystemError,
     ValidationError,
+    DiskSpaceError
 )
+
 from .models import ProxyConfig, ProxyServer
 from .utils import (
     atomic_write,
@@ -86,13 +88,12 @@ class ConfigManager:
             config_dir = self.config_path.parent
             ensure_directory(config_dir, mode=0o700)
 
-            # 如果配置文件存在，检查权限
+            # 如果配置文件存在，检查读取权限
             if self.config_path.exists():
                 permissions = check_file_permissions(self.config_path)
                 if not permissions["readable"]:
                     raise ConfigPermissionError(str(self.config_path), "读取")
-                if not permissions["writable"]:
-                    raise ConfigPermissionError(str(self.config_path), "写入")
+                # 写入权限检查延迟到实际保存时进行
 
             self.logger.debug(f"配置环境已准备: {config_dir}")
 
@@ -147,11 +148,12 @@ class ConfigManager:
             self.logger.error(f"配置加载失败: {e}")
             raise ConfigError(f"加载配置失败: {e}") from None
 
-    def save_config(self, config: ProxyConfig) -> bool:
+    def save_config(self, config: ProxyConfig, backup: Optional[bool] = None) -> bool:
         """保存配置文件
 
         Args:
             config: 配置对象
+            backup: 是否进行备份，None时使用auto_backup设置
 
         Returns:
             bool: 是否成功保存
@@ -171,7 +173,8 @@ class ConfigManager:
             check_disk_space(self.config_path.parent, estimated_size)
 
             # 创建备份
-            if self.auto_backup and self.config_path.exists():
+            should_backup = backup if backup is not None else self.auto_backup
+            if should_backup and self.config_path.exists():
                 backup_path = create_backup(self.config_path, max_backups=self.max_backups)
                 if backup_path:
                     self.logger.debug(f"已创建备份: {backup_path}")
@@ -190,12 +193,16 @@ class ConfigManager:
         except ValidationError:
             # 重新抛出验证错误
             raise
-
+            
         except (OSError, PermissionError) as e:
             self.logger.error(f"保存配置失败: {e}")
             raise ConfigPermissionError(str(self.config_path), "写入") from None
-
+            
         except Exception as e:
+            # 检查是否是已知的特定异常类型，如果是则直接重新抛出
+            if isinstance(e, (DiskSpaceError, ConfigPermissionError)):
+                raise
+            
             self.logger.error(f"保存配置失败: {e}")
             raise ConfigError(f"保存配置失败: {e}") from None
 
@@ -307,7 +314,7 @@ class ConfigManager:
 
         # 转换代理服务器数据
         for name, proxy in config.proxies.items():
-            data["proxies"][name] = proxy.dict()
+            data["proxies"][name] = proxy.model_dump()
 
         # 生成TOML字符串
         try:

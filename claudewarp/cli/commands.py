@@ -323,7 +323,7 @@ def list(
 
             data = {
                 "current_proxy": current_name,
-                "proxies": {name: proxy.dict() for name, proxy in proxies.items()},
+                "proxies": {name: proxy.model_dump() for name, proxy in proxies.items()},
             }
             console.print(json.dumps(data, indent=2, ensure_ascii=False))
         elif format == "simple":

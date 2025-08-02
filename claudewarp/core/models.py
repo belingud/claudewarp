@@ -6,11 +6,9 @@
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Self, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
-if TYPE_CHECKING:
-    from pydantic_core.core_schema import ValidationInfo
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 class ProxyServer(BaseModel):
     """代理服务器配置模型
@@ -93,10 +91,30 @@ class ProxyServer(BaseModel):
             raise ValueError("Auth令牌至少需要3个字符")
         return v
 
-    @field_validator("updated_at")
-    def update_timestamp(cls, v: str, values: dict) -> str:
-        """自动更新时间戳"""
-        return datetime.now().isoformat()
+    def update_timestamp(self) -> None:
+        """手动更新时间戳"""
+        self.updated_at = datetime.now().isoformat()
+
+    def copy_with_updates(self, **kwargs) -> "ProxyServer":
+        """创建副本并更新指定字段，同时更新时间戳
+        
+        Args:
+            **kwargs: 要更新的字段
+            
+        Returns:
+            ProxyServer: 更新后的新实例
+        """
+        # 获取当前所有字段的值
+        current_data = self.model_dump()
+        
+        # 更新指定字段
+        current_data.update(kwargs)
+        
+        # 更新时间戳
+        current_data["updated_at"] = datetime.now().isoformat()
+        
+        # 创建新实例
+        return ProxyServer(**current_data)
     
     @model_validator(mode="after")
     def api_key_or_auth_token_or_helper(cls, values: Self) -> Self:
@@ -137,18 +155,15 @@ class ProxyServer(BaseModel):
             return self.api_key_helper
         return None
 
-    class Config:
-        """Pydantic配置"""
-
+    model_config = ConfigDict(
         # 允许字段别名
-        validate_by_name = True
+        validate_by_name=True,
         # 验证赋值
-        validate_assignment = True
+        validate_assignment=True,
         # JSON编码器配置
-        json_encoders = {datetime: lambda v: v.isoformat()}
-
+        json_encoders={datetime: lambda v: v.isoformat()},
         # 模型示例
-        json_schema_extra = {
+        json_schema_extra={
             "example": {
                 "name": "proxy-cn",
                 "base_url": "https://api.claude-proxy.com/",
@@ -176,6 +191,7 @@ class ProxyServer(BaseModel):
                 }
             ],
         }
+    )
 
 
 class ProxyConfig(BaseModel):
@@ -197,14 +213,12 @@ class ProxyConfig(BaseModel):
         default_factory=lambda: datetime.now().isoformat(), description="配置最后更新时间"
     )
 
-    @field_validator("current_proxy")
-    def validate_current_proxy(cls, v: Optional[str], values: "ValidationInfo") -> Optional[str]:
+    @model_validator(mode="after")
+    def validate_current_proxy(cls, values: Self) -> Self:
         """验证当前代理是否存在于代理列表中"""
-        if v is not None and "proxies" in values.data:
-            proxies = values.data["proxies"]
-            if v not in proxies:
-                raise ValueError(f'当前代理 "{v}" 不存在于代理列表中')
-        return v
+        if values.current_proxy is not None and values.current_proxy not in values.proxies:
+            raise ValueError(f'当前代理 "{values.current_proxy}" 不存在于代理列表中')
+        return values
 
     @field_validator("proxies")
     def validate_proxies(cls, v: Dict[str, ProxyServer]) -> Dict[str, ProxyServer]:
@@ -216,10 +230,53 @@ class ProxyConfig(BaseModel):
                 )
         return v
 
-    @field_validator("updated_at")
-    def update_timestamp(cls, v: str, values: dict) -> str:
-        """自动更新时间戳"""
-        return datetime.now().isoformat()
+    def update_config_timestamp(self) -> None:
+        """手动更新配置文件时间戳"""
+        self.updated_at = datetime.now().isoformat()
+
+    def copy_with_settings_update(self, **settings_kwargs) -> "ProxyConfig":
+        """更新settings并创建新的配置实例（不需要备份）
+        
+        Args:
+            **settings_kwargs: 要更新的settings字段
+            
+        Returns:
+            ProxyConfig: 更新后的新实例
+        """
+        new_settings = self.settings.copy()
+        new_settings.update(settings_kwargs)
+        
+        # 创建新实例，保持其他字段不变，只更新settings和时间戳
+        return ProxyConfig(
+            version=self.version,
+            current_proxy=self.current_proxy,
+            proxies=self.proxies.copy(),
+            settings=new_settings,
+            created_at=self.created_at,
+            updated_at=datetime.now().isoformat()
+        )
+
+    def copy_with_proxy_update(self, proxy_name: str, updated_proxy: ProxyServer) -> "ProxyConfig":
+        """更新proxy并创建新的配置实例（需要备份）
+        
+        Args:
+            proxy_name: 代理名称
+            updated_proxy: 更新后的代理对象
+            
+        Returns:
+            ProxyConfig: 更新后的新实例
+        """
+        new_proxies = self.proxies.copy()
+        new_proxies[proxy_name] = updated_proxy
+        
+        return ProxyConfig(
+            version=self.version,
+            current_proxy=self.current_proxy,
+            proxies=new_proxies,
+            settings=self.settings.copy(),
+            created_at=self.created_at,
+            updated_at=datetime.now().isoformat()
+        )
 
     def get_current_proxy(self) -> Optional[ProxyServer]:
         """获取当前活跃的代理服务器"""
@@ -265,14 +322,15 @@ class ProxyConfig(BaseModel):
         """获取所有启用的代理服务器"""
         return {name: proxy for name, proxy in self.proxies.items() if proxy.is_active}
 
-    class Config:
-        """Pydantic配置"""
-
-        validate_by_name = True
-        validate_assignment = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        # 允许字段别名
+        validate_by_name=True,
+        # 验证赋值
+        validate_assignment=True,
+        # JSON编码器配置
+        json_encoders={datetime: lambda v: v.isoformat()},
+        # 模型示例
+        json_schema_extra={
             "example": {
                 "version": "1.0",
                 "current_proxy": "proxy-cn",
@@ -288,6 +346,7 @@ class ProxyConfig(BaseModel):
                 "settings": {"auto_backup": True, "backup_count": 5},
             }
         }
+    )
 
 
 class ExportFormat(BaseModel):
@@ -321,8 +380,8 @@ class ExportFormat(BaseModel):
             v += "_"
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "shell_type": "bash",
                 "include_comments": True,
@@ -330,6 +389,7 @@ class ExportFormat(BaseModel):
                 "export_all": False,
             }
         }
+    )
 
 
 # 用于类型提示的导出

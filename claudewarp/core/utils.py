@@ -335,7 +335,7 @@ def create_backup(
         ensure_directory(backup_path)
 
         # 生成备份文件名
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         backup_file = backup_path / f"{src_path.stem}_{timestamp}{src_path.suffix}"
 
         # 复制文件

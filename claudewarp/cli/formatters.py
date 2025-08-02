@@ -5,7 +5,7 @@ CLI输出格式化模块
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 from rich import box
 from rich.console import Group
