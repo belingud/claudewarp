@@ -17,3 +17,10 @@ format:
     @uv run ruff check --fix claudewarp
     @uv run ruff format claudewarp
     @uv run isort claudewarp
+
+# Build wheel
+uv-build:
+    @echo "Delete dist..."
+    @rm -rf dist
+    @echo "Building wheel..."
+    @uv build
