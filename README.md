@@ -40,11 +40,11 @@
 🎨 **美观界面** - 基于 PySide6 的现代化 GUI 界面  
 
 
-![Light](artwork/light.png)
+<img src="artwork/light.png" alt="Light" width="70%">
 
-![Dark](artwork/dark.png)
+<img src="artwork/dark.png" alt="Dark" width="70%">
 
-![edit](artwork/edit.png)
+<img src="artwork/edit.png" alt="edit" width="40%">
 
 ---
 
