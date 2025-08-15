@@ -58,7 +58,7 @@
 0731更新
 
 1. v0.0.40版本增加了apiKeyHelper的配置，api key、auth token、apiKeyHelper三者互斥
-2. 使用了更为先进的打包技术，减小应用体积
+2. 使用了 Nuitka 编译技术，提升性能并减小应用体积
 3. cli版本同步发布
 
 ---

@@ -4,7 +4,8 @@
       "Bash(mkdir:*)",
       "Bash(python:*)",
       "Bash(uv run ruff format:*)",
-      "Bash(uv run pytest:*)"
+      "Bash(uv run pytest:*)",
+      "Bash(cargo check:*)"
     ],
     "deny": []
   }
