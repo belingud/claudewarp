@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator, ConfigDict
 
 class ProxyServer(BaseModel):
     """代理服务器配置模型
@@ -19,7 +19,7 @@ class ProxyServer(BaseModel):
     name: str = Field(
         ..., min_length=1, max_length=50, description="代理服务器名称，用于标识和选择"
     )
-    base_url: str = Field(..., description="代理服务器的基础URL，必须是有效的HTTP/HTTPS地址")
+    base_url: HttpUrl = Field(..., description="代理服务器的基础URL，必须是有效的HTTP/HTTPS地址")
     api_key: Optional[str] = Field(default=None, description="API密钥，用于身份验证")
     description: str = Field(default="", max_length=200, description="代理服务器的描述信息")
     tags: List[str] = Field(default_factory=list, description="标签列表，用于分类和筛选")
@@ -43,33 +43,6 @@ class ProxyServer(BaseModel):
         """验证代理名称格式"""
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
             raise ValueError("代理名称只能包含字母、数字、下划线和横线")
-        return v
-
-    @field_validator("base_url")
-    def validate_base_url(cls, v: str) -> str:
-        """验证和规范化base_url"""
-        # 检查URL格式
-        if not re.match(r"^https?://", v):
-            raise ValueError("Base URL必须以http://或https://开头")
-
-        # 确保URL以/结尾
-        if not v.endswith("/"):
-            v += "/"
-
-        # 基本URL格式验证
-        url_pattern = re.compile(
-            r"^https?://"  # http:// or https://
-            r"(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|"  # domain
-            r"localhost|"  # localhost
-            r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})"  # IP
-            r"(?::\d+)?"  # optional port
-            r"(?:/?|[/?]\S+)$",
-            re.IGNORECASE,
-        )
-
-        if not url_pattern.match(v):
-            raise ValueError("Base URL格式无效")
-
         return v
 
     @field_validator("tags")
