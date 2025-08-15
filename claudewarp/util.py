@@ -1,6 +1,7 @@
-
 from datetime import datetime
+
 from pydantic import ValidationError
+
 
 def _format_datetime(iso_string: str) -> str:
     """格式化日期时间
@@ -42,6 +43,6 @@ def format_validation_error(e: ValidationError) -> str:
         msg = error["msg"]
         # 移除 "Value error, " 前缀
         if msg.startswith("Value error, "):
-                msg = msg[len("Value error, ") :]
+            msg = msg[len("Value error, ") :]
         error_messages.append(msg)
     return "\n".join(error_messages)

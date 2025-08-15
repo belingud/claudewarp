@@ -74,7 +74,7 @@ class BaseProxyDialog(QDialog):
 
         self.setup_ui()
         self.setup_connections()
-    
+
     def set_input_min_width(self, edit: LineEdit):
         """设置输入框最小宽度"""
         edit.setMinimumWidth(self._input_min_width)
@@ -321,7 +321,7 @@ class EditProxyDialog(BaseProxyDialog):
     def load_proxy_data(self):
         """加载代理数据"""
         self.name_edit.setText(self.original_proxy.name)
-        self.url_edit.setText(self.original_proxy.base_url)
+        self.url_edit.setText(str(self.original_proxy.base_url))
         self.desc_edit.setText(self.original_proxy.description)
         self.tags_edit.setText(", ".join(self.original_proxy.tags))
         self.active_check.setChecked(self.original_proxy.is_active)
@@ -338,7 +338,6 @@ class EditProxyDialog(BaseProxyDialog):
         else:
             self.auth_method_combo.setCurrentText("API KEY")
             self.credential_edit.setText(self.original_proxy.api_key or "")
-
 
     def accept_dialog(self):
         """确认对话框"""

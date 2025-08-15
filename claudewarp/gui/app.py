@@ -104,7 +104,7 @@ def main(debug: bool = False) -> int:
         logger.debug("创建 QApplication 实例")
         app = QApplication(sys.argv)
         set_default_font(app)
- 
+
         # 设置应用程序属性
         logger.debug("设置应用程序属性")
         app.setApplicationName("Claude Proxy Manager")

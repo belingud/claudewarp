@@ -52,7 +52,7 @@ def format_proxy_table(
             status = "[red]●[/red] 禁用"
 
         # 格式化URL（显示简短版本）
-        url_display = proxy.base_url
+        url_display = str(proxy.base_url)
         if len(url_display) > 30:
             url_display = url_display[:27] + "..."
 
@@ -107,7 +107,7 @@ def format_proxy_info(proxy: ProxyServer, detailed: bool = True) -> Panel:
     # 基本信息
     info_lines = [
         f"[bold]名称:[/bold] {proxy.name}",
-        f"[bold]URL:[/bold] {proxy.base_url}",
+        f"[bold]URL:[/bold] {str(proxy.base_url)}",
         f"[bold]状态:[/bold] {'[green]启用[/green]' if proxy.is_active else '[red]禁用[/red]'}",
     ]
 

@@ -17,11 +17,10 @@ from .exceptions import (
     ConfigFileCorruptedError,
     ConfigFileNotFoundError,
     ConfigPermissionError,
+    DiskSpaceError,
     SystemError,
     ValidationError,
-    DiskSpaceError
 )
-
 from .models import ProxyConfig, ProxyServer
 from .utils import (
     atomic_write,
@@ -193,16 +192,16 @@ class ConfigManager:
         except ValidationError:
             # 重新抛出验证错误
             raise
-            
+
         except (OSError, PermissionError) as e:
             self.logger.error(f"保存配置失败: {e}")
             raise ConfigPermissionError(str(self.config_path), "写入") from None
-            
+
         except Exception as e:
             # 检查是否是已知的特定异常类型，如果是则直接重新抛出
             if isinstance(e, (DiskSpaceError, ConfigPermissionError)):
                 raise
-            
+
             self.logger.error(f"保存配置失败: {e}")
             raise ConfigError(f"保存配置失败: {e}") from None
 
@@ -271,6 +270,27 @@ class ConfigManager:
                 # 确保名称一致
                 proxy_info["name"] = name
 
+                # 修复HttpUrl序列化问题：处理字符串表示格式
+                if "base_url" in proxy_info and isinstance(proxy_info["base_url"], str):
+                    base_url = proxy_info["base_url"]
+                    # 检查是否是HttpUrl的字符串表示格式
+                    if base_url.startswith("HttpUrl('") and base_url.endswith("')"):
+                        # 提取实际的URL
+                        try:
+                            # 使用eval安全地提取URL（仅限此特定格式）
+                            actual_url = eval(base_url)
+                            proxy_info["base_url"] = actual_url
+                        except (SyntaxError, NameError):
+                            # 如果eval失败，尝试手动提取
+                            import re
+
+                            match = re.match(r"HttpUrl\(['\"]([^'\"]+)['\"]\)", base_url)
+                            if match:
+                                proxy_info["base_url"] = match.group(1)
+                            else:
+                                # 如果无法提取，保持原样，让Pydantic处理错误
+                                pass
+
                 # 创建ProxyServer对象
                 proxy = ProxyServer(**proxy_info)
                 proxies[name] = proxy
@@ -290,6 +310,7 @@ class ConfigManager:
         except Exception as e:
             self.logger.error(f"解析配置数据失败: {e}")
             import traceback
+
             traceback.print_exc()
             raise ValidationError(f"配置数据格式错误: {e}") from None
 
@@ -314,7 +335,11 @@ class ConfigManager:
 
         # 转换代理服务器数据
         for name, proxy in config.proxies.items():
-            data["proxies"][name] = proxy.model_dump()
+            proxy_dict = proxy.model_dump()
+            # 确保HttpUrl对象被正确转换为字符串
+            if "base_url" in proxy_dict and hasattr(proxy_dict["base_url"], "__str__"):
+                proxy_dict["base_url"] = str(proxy_dict["base_url"])
+            data["proxies"][name] = proxy_dict
 
         # 生成TOML字符串
         try:

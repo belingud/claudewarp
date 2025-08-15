@@ -8,7 +8,15 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator, ConfigDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    HttpUrl,
+    field_validator,
+    model_validator,
+)
+
 
 class ProxyServer(BaseModel):
     """代理服务器配置模型
@@ -36,8 +44,11 @@ class ProxyServer(BaseModel):
         default=None, description="Auth令牌，用于身份验证（与api_key互斥）"
     )
     api_key_helper: Optional[str] = Field(
-        default=None, min_length=1, description="API密钥助手命令，用于获取API密钥（与api_key、auth_token互斥）"
+        default=None,
+        min_length=1,
+        description="API密钥助手命令，用于获取API密钥（与api_key、auth_token互斥）",
     )
+
     @field_validator("name")
     def validate_name(cls, v: str) -> str:
         """验证代理名称格式"""
@@ -70,25 +81,25 @@ class ProxyServer(BaseModel):
 
     def copy_with_updates(self, **kwargs) -> "ProxyServer":
         """创建副本并更新指定字段，同时更新时间戳
-        
+
         Args:
             **kwargs: 要更新的字段
-            
+
         Returns:
             ProxyServer: 更新后的新实例
         """
         # 获取当前所有字段的值
         current_data = self.model_dump()
-        
+
         # 更新指定字段
         current_data.update(kwargs)
-        
+
         # 更新时间戳
         current_data["updated_at"] = datetime.now().isoformat()
-        
+
         # 创建新实例
         return ProxyServer(**current_data)
-    
+
     @model_validator(mode="after")
     def api_key_or_auth_token_or_helper(cls, values: Self) -> Self:
         """确保api_key、auth_token或api_key_helper至少有一个且互斥"""
@@ -100,7 +111,7 @@ class ProxyServer(BaseModel):
             auth_methods.append("auth_token")
         if values.api_key_helper:
             auth_methods.append("api_key_helper")
-        
+
         if len(auth_methods) > 1:
             raise ValueError(f"{'、'.join(auth_methods)}只能存在一个")
         if not auth_methods:
@@ -134,7 +145,11 @@ class ProxyServer(BaseModel):
         # 验证赋值
         validate_assignment=True,
         # JSON编码器配置
-        json_encoders={datetime: lambda v: v.isoformat()},
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            # 确保HttpUrl对象正确序列化为字符串
+            "HttpUrl": lambda v: str(v),
+        },
         # 模型示例
         json_schema_extra={
             "example": {
@@ -161,9 +176,9 @@ class ProxyServer(BaseModel):
                     "description": "使用API密钥助手命令的代理",
                     "tags": ["helper", "dynamic"],
                     "is_active": True,
-                }
+                },
             ],
-        }
+        },
     )
 
 
@@ -209,16 +224,16 @@ class ProxyConfig(BaseModel):
 
     def copy_with_settings_update(self, **settings_kwargs) -> "ProxyConfig":
         """更新settings并创建新的配置实例（不需要备份）
-        
+
         Args:
             **settings_kwargs: 要更新的settings字段
-            
+
         Returns:
             ProxyConfig: 更新后的新实例
         """
         new_settings = self.settings.copy()
         new_settings.update(settings_kwargs)
-        
+
         # 创建新实例，保持其他字段不变，只更新settings和时间戳
         return ProxyConfig(
             version=self.version,
@@ -226,29 +241,29 @@ class ProxyConfig(BaseModel):
             proxies=self.proxies.copy(),
             settings=new_settings,
             created_at=self.created_at,
-            updated_at=datetime.now().isoformat()
+            updated_at=datetime.now().isoformat(),
         )
 
     def copy_with_proxy_update(self, proxy_name: str, updated_proxy: ProxyServer) -> "ProxyConfig":
         """更新proxy并创建新的配置实例（需要备份）
-        
+
         Args:
             proxy_name: 代理名称
             updated_proxy: 更新后的代理对象
-            
+
         Returns:
             ProxyConfig: 更新后的新实例
         """
         new_proxies = self.proxies.copy()
         new_proxies[proxy_name] = updated_proxy
-        
+
         return ProxyConfig(
             version=self.version,
             current_proxy=self.current_proxy,
             proxies=new_proxies,
             settings=self.settings.copy(),
             created_at=self.created_at,
-            updated_at=datetime.now().isoformat()
+            updated_at=datetime.now().isoformat(),
         )
 
     def get_current_proxy(self) -> Optional[ProxyServer]:
@@ -301,7 +316,11 @@ class ProxyConfig(BaseModel):
         # 验证赋值
         validate_assignment=True,
         # JSON编码器配置
-        json_encoders={datetime: lambda v: v.isoformat()},
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            # 确保HttpUrl对象正确序列化为字符串
+            "HttpUrl": lambda v: str(v),
+        },
         # 模型示例
         json_schema_extra={
             "example": {
@@ -318,7 +337,7 @@ class ProxyConfig(BaseModel):
                 },
                 "settings": {"auto_backup": True, "backup_count": 5},
             }
-        }
+        },
     )
 
 

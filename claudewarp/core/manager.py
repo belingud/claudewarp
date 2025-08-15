@@ -5,8 +5,8 @@
 负责协调ConfigManager、数据模型和异常处理。
 """
 
-import logging
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -63,7 +63,7 @@ class ProxyManager:
             ConfigError: 配置加载失败
         """
         from .exceptions import ConfigFileCorruptedError
-        
+
         try:
             self._config = self.config_manager.load_config()
             self.logger.debug(f"已加载配置，包含 {len(self._config.proxies)} 个代理服务器")
@@ -354,7 +354,7 @@ class ProxyManager:
 
             # 检查哪些字段实际发生了变化
             changed_fields = []
-            if base_url is not None and base_url != proxy.base_url:
+            if base_url is not None and base_url != str(proxy.base_url):
                 changed_fields.append("base_url")
             if api_key is not None and api_key != proxy.api_key:
                 changed_fields.append("api_key")
@@ -381,7 +381,7 @@ class ProxyManager:
             # 准备更新数据
             update_data = {
                 "name": name,
-                "base_url": base_url if base_url is not None else proxy.base_url,
+                "base_url": base_url if base_url is not None else str(proxy.base_url),
                 "description": description if description is not None else proxy.description,
                 "tags": tags if tags is not None else proxy.tags,
                 "is_active": is_active if is_active is not None else proxy.is_active,
@@ -413,10 +413,13 @@ class ProxyManager:
                 update_data["api_key_helper"] = proxy.api_key_helper
 
             # 使用copy_with_updates方法创建新的代理对象（会自动更新时间戳）
-            updated_proxy = proxy.copy_with_updates(**{
-                k: v for k, v in update_data.items() 
-                if k != "name" and k != "created_at"  # 排除不需要更新的字段
-            })
+            updated_proxy = proxy.copy_with_updates(
+                **{
+                    k: v
+                    for k, v in update_data.items()
+                    if k != "name" and k != "created_at"  # 排除不需要更新的字段
+                }
+            )
 
             # 更新配置
             self.config.proxies[name] = updated_proxy
@@ -513,7 +516,7 @@ class ProxyManager:
             comment_char = "#" if export_format.shell_type != "powershell" else "#"
             lines.append(f"{comment_char} Claude 中转站环境变量")
             lines.append(f"{comment_char} 代理名称: {proxy.name}")
-            lines.append(f"{comment_char} 代理URL: {proxy.base_url}")
+            lines.append(f"{comment_char} 代理URL: {str(proxy.base_url)}")
             lines.append(f"{comment_char} 认证方式: {proxy.get_auth_method()}")
             if proxy.description:
                 lines.append(f"{comment_char} 描述: {proxy.description}")
@@ -533,15 +536,15 @@ class ProxyManager:
 
         if export_format.shell_type == "powershell":
             # PowerShell格式
-            lines.append(f'$env:{base_url_var} = "{proxy.base_url}"')
+            lines.append(f'$env:{base_url_var} = "{str(proxy.base_url)}"')
             lines.append(f'$env:{auth_var} = "{auth_value}"')
         elif export_format.shell_type == "fish":
             # Fish shell格式
-            lines.append(f'set -gx {base_url_var} "{proxy.base_url}"')
+            lines.append(f'set -gx {base_url_var} "{str(proxy.base_url)}"')
             lines.append(f'set -gx {auth_var} "{auth_value}"')
         else:
             # Bash/Zsh格式（默认）
-            lines.append(f'export {base_url_var}="{proxy.base_url}"')
+            lines.append(f'export {base_url_var}="{str(proxy.base_url)}"')
             lines.append(f'export {auth_var}="{auth_value}"')
 
         # 如果需要导出所有代理
@@ -620,7 +623,7 @@ class ProxyManager:
             "proxy_name": name,
             "status": "unknown",
             "message": "连接测试功能尚未实现",
-            "base_url": proxy.base_url,
+            "base_url": str(proxy.base_url),
             "timestamp": proxy.updated_at,
         }
 
@@ -661,7 +664,7 @@ class ProxyManager:
                         break
 
             # 搜索URL
-            if "base_url" in search_fields and query in proxy.base_url.lower():
+            if "base_url" in search_fields and query in str(proxy.base_url).lower():
                 match = True
 
             if match:
@@ -810,7 +813,7 @@ class ProxyManager:
             merged_config["apiKeyHelper"] = proxy.api_key_helper
 
         # 设置基础URL
-        merged_config["env"]["ANTHROPIC_BASE_URL"] = proxy.base_url
+        merged_config["env"]["ANTHROPIC_BASE_URL"] = str(proxy.base_url)
         merged_config["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = 1
 
         # 如果配置了大模型，添加 ANTHROPIC_MODEL 环境变量
@@ -857,7 +860,7 @@ class ProxyManager:
 
             # 使用copy_with_settings_update方法更新settings（不需要备份）
             self._config = self.config.copy_with_settings_update(theme=theme_mode)
-            
+
             # 保存配置（settings变更不需要备份）
             self._save_config(backup=False)
             self.logger.info(f"主题设置已保存: {theme_mode}")

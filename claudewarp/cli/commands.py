@@ -159,7 +159,7 @@ def add(
                         choices=["1", "2", "3"],
                         default="1",
                     )
-                    
+
                     if choice == "1":
                         auth_method = "api_key"
                         break
@@ -169,7 +169,7 @@ def add(
                     elif choice == "3":
                         auth_method = "api_key_helper"
                         break
-                
+
                 if auth_method == "api_key":
                     key = typer.prompt("API Key", hide_input=True)
                     if not key:
@@ -191,15 +191,19 @@ def add(
                     key = typer.prompt("API Key（可选）", hide_input=True, default="") or None
                 if auth_token is None:
                     auth_token = (
-                        typer.prompt("Auth Token（可选，与API Key互斥）", hide_input=True, default="")
+                        typer.prompt(
+                            "Auth Token（可选，与API Key互斥）", hide_input=True, default=""
+                        )
                         or None
                     )
                 if api_key_helper is None:
                     api_key_helper = (
-                        typer.prompt("API Key Helper（可选，与API Key、Auth Token互斥）", default="")
+                        typer.prompt(
+                            "API Key Helper（可选，与API Key、Auth Token互斥）", default=""
+                        )
                         or None
                     )
-            
+
             # 验证至少提供了一种认证方式
             if not key and not auth_token and not api_key_helper:
                 logger.error("必须提供API Key、Auth Token或API Key Helper")
@@ -599,7 +603,7 @@ def edit(
             console.print("  [2] Auth Token")
             console.print("  [3] API Key Helper")
             console.print("  [4] 保持当前认证方式")
-            
+
             while True:
                 choice = Prompt.ask(
                     "请输入选项 (1-4)",
@@ -607,7 +611,7 @@ def edit(
                     default="4",
                     console=console,
                 )
-                
+
                 if choice == "1":
                     auth_method = "api_key"
                     break

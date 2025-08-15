@@ -59,7 +59,7 @@ class TestConfigManagerIntegration:
         assert "integration-proxy" in loaded_config.proxies
         loaded_proxy = loaded_config.proxies["integration-proxy"]
         assert loaded_proxy.name == proxy.name
-        assert loaded_proxy.base_url == proxy.base_url
+        assert loaded_proxy.base_url == proxy.base_url  # HttpUrl对象可以直接比较
         assert loaded_proxy.api_key == proxy.api_key
 
     def test_config_backup_and_restore_workflow(self, temp_dir):

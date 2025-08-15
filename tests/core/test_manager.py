@@ -76,7 +76,7 @@ class TestProxyManagerCRUD:
         
         assert isinstance(proxy, ProxyServer)
         assert proxy.name == "new-proxy"
-        assert proxy.base_url == "https://api.new.com/"
+        assert str(proxy.base_url) == "https://api.new.com/"
         assert proxy.api_key == "sk-newkey"
         assert "new-proxy" in temp_proxy_manager.config.proxies
 
@@ -302,7 +302,7 @@ class TestProxyManagerUpdate:
             tags=["updated", "test"]
         )
         
-        assert updated_proxy.base_url == "https://api.updated.com/"
+        assert str(updated_proxy.base_url) == "https://api.updated.com/"
         assert updated_proxy.description == "更新后的描述"
         assert "updated" in updated_proxy.tags
         assert updated_proxy.api_key == sample_proxy.api_key  # 保持原值
@@ -374,7 +374,7 @@ class TestProxyManagerExport:
         export_content = temp_proxy_manager.export_environment()
         
         assert "ANTHROPIC_BASE_URL" in export_content
-        assert sample_proxy.base_url in export_content
+        assert str(sample_proxy.base_url) in export_content
         assert "ANTHROPIC_API_KEY" in export_content
         assert sample_proxy.api_key in export_content
 
@@ -385,7 +385,7 @@ class TestProxyManagerExport:
         export_content = temp_proxy_manager.export_environment(proxy_name="test-proxy")
         
         assert "ANTHROPIC_BASE_URL" in export_content
-        assert sample_proxy.base_url in export_content
+        assert str(sample_proxy.base_url) in export_content
 
     def test_export_environment_no_current_proxy(self, temp_proxy_manager):
         """测试没有当前代理时的导出"""
@@ -667,7 +667,7 @@ class TestProxyManagerStatus:
         assert result["proxy_name"] == "test-proxy"
         assert result["status"] == "unknown"
         assert "message" in result
-        assert result["base_url"] == sample_proxy.base_url
+        assert result["base_url"] == str(sample_proxy.base_url)
 
     def test_validate_proxy_connection_not_found(self, temp_proxy_manager):
         """测试验证不存在代理的连接"""

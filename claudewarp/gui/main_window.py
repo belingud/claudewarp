@@ -10,8 +10,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+import requests
+from packaging import version
 from pydantic import ValidationError
-
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -45,7 +46,6 @@ from qfluentwidgets import (
     TitleLabel,
 )
 
-from claudewarp.util import _format_datetime, _mask_api_key, format_validation_error
 from claudewarp.core.manager import ProxyManager
 from claudewarp.core.models import ExportFormat, ProxyServer
 from claudewarp.gui.dialogs import (
@@ -56,6 +56,7 @@ from claudewarp.gui.dialogs import (
     ExportDialog,
 )
 from claudewarp.gui.theme_manager import get_theme_manager
+from claudewarp.util import _format_datetime, _mask_api_key, format_validation_error
 
 
 class MainWindow(QMainWindow):
@@ -288,6 +289,8 @@ class MainWindow(QMainWindow):
         # self.refresh_btn.setIcon(FluentIcon.SYNC)
         self.theme_toggle_btn = PushButton("🌓")  # 使用月亮图标表示主题切换
         self.theme_toggle_btn.setIcon(FluentIcon.BRIGHTNESS)
+        self.check_updates_btn = PushButton("检查更新")
+        # self.check_updates_btn.setIcon(FluentIcon.SYNC)
 
         # 设置按钮提示文本
         self.add_btn.setToolTip("添加新的代理")
@@ -297,6 +300,7 @@ class MainWindow(QMainWindow):
         self.toggle_btn.setToolTip("切换启用状态")
         self.refresh_btn.setToolTip("刷新代理列表")
         self.theme_toggle_btn.setToolTip("切换主题 (浅色/深色)")
+        self.check_updates_btn.setToolTip("检查更新")
 
         # 添加按钮到布局
         button_layout.addWidget(self.add_btn)
@@ -307,6 +311,7 @@ class MainWindow(QMainWindow):
         button_layout.addStretch()
         button_layout.addWidget(self.refresh_btn)
         button_layout.addWidget(self.theme_toggle_btn)
+        button_layout.addWidget(self.check_updates_btn)
 
         layout.addLayout(button_layout)
 
@@ -448,6 +453,7 @@ class MainWindow(QMainWindow):
         self.toggle_btn.clicked.connect(self.toggle_proxy_status)
         self.refresh_btn.clicked.connect(self.refresh_data)
         self.theme_toggle_btn.clicked.connect(self.toggle_theme)
+        self.check_updates_btn.clicked.connect(self.check_for_updates)
 
         # 导出按钮
         self.export_bash_btn.clicked.connect(lambda: self.export_environment("bash"))
@@ -551,7 +557,7 @@ class MainWindow(QMainWindow):
                 self.proxy_table.setItem(row, 1, name_item)
 
                 # URL
-                url_item = QTableWidgetItem(proxy.base_url)
+                url_item = QTableWidgetItem(str(proxy.base_url))
                 self.proxy_table.setItem(row, 2, url_item)
 
                 # 描述
@@ -870,7 +876,7 @@ class MainWindow(QMainWindow):
         """
         切换配置启用状态
 
-        获取当前选择的配置，切换其状态，并刷新数据  
+        获取当前选择的配置，切换其状态，并刷新数据
         """
         proxy_name = self.get_selected_proxy_name()
         if not proxy_name:
@@ -1110,6 +1116,86 @@ class MainWindow(QMainWindow):
         stylesheet = self.get_dark_mode_stylesheet()
         self.setStyleSheet(stylesheet)
         self.logger.info("已应用暗色模式样式表")
+
+    def check_for_updates(self):
+        """检查更新"""
+        try:
+            self.logger.info("开始检查更新")
+            self.status_label.setText("正在检查更新...")
+
+            # 禁用按钮防止重复点击
+            self.check_updates_btn.setEnabled(False)
+            self.check_updates_btn.setText("检查更新")
+
+            # 获取当前版本
+            from claudewarp import __version__
+
+            current_version = __version__
+
+            # 检查 GitHub releases
+            latest_version = self.get_latest_release_version()
+
+            if latest_version is None:
+                self.show_warning("无法获取最新版本信息")
+                return
+
+            # 比较版本
+            if version.parse(current_version) < version.parse(latest_version):
+                # 有新版本
+                reply = QMessageBox.question(
+                    self,
+                    "发现新版本",
+                    f"发现新版本 {latest_version} (当前版本: {current_version})\n\n"
+                    f"是否前往 GitHub 下载新版本？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes,
+                )
+
+                if reply == QMessageBox.StandardButton.Yes:
+                    import webbrowser
+
+                    webbrowser.open("https://github.com/belingud/claudewarp/releases/latest")
+            else:
+                self.show_info(f"当前版本 {current_version} 已是最新版本")
+
+        except Exception as e:
+            self.logger.error(f"检查更新失败: {e}")
+            self.show_error(f"检查更新失败: {e}")
+        finally:
+            # 恢复按钮状态
+            self.check_updates_btn.setEnabled(True)
+            self.check_updates_btn.setText("检查更新")
+            self.status_label.setText("就绪")
+
+    def get_latest_release_version(self) -> Optional[str]:
+        """获取最新发布版本
+
+        Returns:
+            最新版本号，如果获取失败则返回 None
+        """
+        try:
+            # GitHub API 获取最新 release
+            response = requests.get(
+                "https://api.github.com/repos/belingud/claudewarp/releases/latest", timeout=10
+            )
+            response.raise_for_status()
+
+            release_info = response.json()
+            tag_name = release_info.get("tag_name", "")
+
+            # 移除 'v' 前缀（如果有）
+            if tag_name.startswith("v"):
+                tag_name = tag_name[1:]
+
+            self.logger.info(f"获取到最新版本: {tag_name}")
+            return tag_name
+
+        except requests.RequestException as e:
+            self.logger.error(f"请求 GitHub API 失败: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"解析版本信息失败: {e}")
+            return None
 
 
 # 导出主窗口类

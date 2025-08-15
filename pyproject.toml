@@ -33,6 +33,8 @@ dependencies = [
     "rich>=13.0.0", # CLI美化输出
     "colorlog>=6.0.0", # 彩色日志
     "pydantic-core>=2.27.2",
+    "requests",
+    "packaging",
 ]
 
 [project.scripts]
@@ -113,6 +115,8 @@ gui = [
     "pyside6-fluent-widgets>=1.7.6,<2.0.0",
     "darkdetect>=0.8.0",
     "imageio>=2.35.1",
+    "requests>=2.31.0",
+    "packaging>=21.0",
 ]
 dev = [
     "pytest>=7.0.0",
