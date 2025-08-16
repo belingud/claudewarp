@@ -354,23 +354,23 @@ class ProxyManager:
 
             # 检查哪些字段实际发生了变化
             changed_fields = []
-            if base_url is not None and base_url != str(proxy.base_url):
+            if base_url != str(proxy.base_url):
                 changed_fields.append("base_url")
-            if api_key is not None and api_key != proxy.api_key:
+            if api_key != proxy.api_key:
                 changed_fields.append("api_key")
-            if auth_token is not None and auth_token != proxy.auth_token:
+            if auth_token != proxy.auth_token:
                 changed_fields.append("auth_token")
-            if api_key_helper is not None and api_key_helper != proxy.api_key_helper:
+            if api_key_helper != proxy.api_key_helper:
                 changed_fields.append("api_key_helper")
-            if description is not None and description != proxy.description:
+            if description != proxy.description:
                 changed_fields.append("description")
-            if tags is not None and tags != proxy.tags:
+            if tags != proxy.tags:
                 changed_fields.append("tags")
-            if is_active is not None and is_active != proxy.is_active:
+            if is_active != proxy.is_active:
                 changed_fields.append("is_active")
-            if bigmodel is not None and bigmodel != proxy.bigmodel:
+            if bigmodel != proxy.bigmodel:
                 changed_fields.append("bigmodel")
-            if smallmodel is not None and smallmodel != proxy.smallmodel:
+            if smallmodel != proxy.smallmodel:
                 changed_fields.append("smallmodel")
 
             # 如果没有实际变更，直接返回现有代理
@@ -381,12 +381,12 @@ class ProxyManager:
             # 准备更新数据
             update_data = {
                 "name": name,
-                "base_url": base_url if base_url is not None else str(proxy.base_url),
-                "description": description if description is not None else proxy.description,
-                "tags": tags if tags is not None else proxy.tags,
-                "is_active": is_active if is_active is not None else proxy.is_active,
-                "bigmodel": bigmodel if bigmodel is not None else proxy.bigmodel,
-                "smallmodel": smallmodel if smallmodel is not None else proxy.smallmodel,
+                "base_url": base_url if "base_url" in changed_fields else str(proxy.base_url),
+                "description": description if "description" in changed_fields else proxy.description,
+                "tags": tags if "tags" in changed_fields else proxy.tags,
+                "is_active": is_active if "is_active" in changed_fields else proxy.is_active,
+                "bigmodel": bigmodel if "bigmodel" in changed_fields else proxy.bigmodel,
+                "smallmodel": smallmodel if "smallmodel" in changed_fields else proxy.smallmodel,
                 "created_at": proxy.created_at,  # 保持原创建时间
             }
 
