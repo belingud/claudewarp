@@ -1,4 +1,4 @@
-# This script compiles the Claudewarp GUI application into a single executable for Windows using Nuitka and PowerShell.
+# This script compiles the Claudewarp GUI application into both single-file and multi-file distributions for Windows using Nuitka and PowerShell.
 
 # Ensure the script is run from the project root directory.
 
@@ -6,85 +6,88 @@
 # For example:
 # .\.venv\Scripts\Activate.ps1
 
-Write-Host "Starting Nuitka compilation for Windows..."
+# Load common functions
+. ".\scripts\nuitka_common.ps1"
 
-# Run the Nuitka compilation command
-uv run nuitka `
-    --standalone `
-    --onefile `
-    --enable-plugin=pyside6 `
-    --windows-disable-console `
-    --windows-icon-from-ico=claudewarp/gui/resources/icons/claudewarp.ico `
-    --output-dir=build `
-    --assume-yes-for-download `
-    --report=report.html `
-    --nofollow-import-to=PySide6.QtOpenGL `
-    --nofollow-import-to=PySide6.QtMultimedia `
-    --nofollow-import-to=PySide6.QtMultimediaWidgets `
-    --nofollow-import-to=PySide6.QtWebEngineWidgets `
-    --nofollow-import-to=PySide6.QtQml `
-    --nofollow-import-to=PySide6.QtQuick `
-    --nofollow-import-to=PySide6.QtNetwork `
-    --nofollow-import-to=imageio `
-    --nofollow-import-to=numpy `
-    --nofollow-import-to=PIL `
-    --nofollow-import-to=markdown_it_py `
-    --nofollow-import-to=mdurl `
-    --nofollow-import-to=pygments `
-    --nofollow-import-to=shellingham `
-    --nofollow-import-to=bump2version `
-    --nofollow-import-to=deptry `
-    --nofollow-import-to=pyright `
-    --nofollow-import-to=pre_commit `
-    --nofollow-import-to=pytest `
-    --nofollow-import-to=pytest_cov `
-    --nofollow-import-to=pytest_qt `
-    --nofollow-import-to=iniconfig `
-    --nofollow-import-to=pluggy `
-    --nofollow-import-to=virtualenv `
-    --nofollow-import-to=platformdirs `
-    --nofollow-import-to=filelock `
-    --nofollow-import-to=cfgv `
-    --nofollow-import-to=identify `
-    --nofollow-import-to=nodeenv `
-    --nofollow-import-to=pyyaml `
-    --nofollow-import-to=claudewarp.cli `
-    --nofollow-import-to=bdb `
-    --nofollow-import-to=bz2 `
-    --nofollow-import-to=calendar `
-    --nofollow-import-to=cgi `
-    --nofollow-import-to=cgitb `
-    --nofollow-import-to=chunk `
-    --nofollow-import-to=pdb `
-    --nofollow-import-to=trace `
-    --nofollow-import-to=tracemalloc `
-    --nofollow-import-to=uu `
-    --nofollow-import-to=xdrlib `
-    --nofollow-import-to=imaplib `
-    --nofollow-import-to=poplib `
-    --nofollow-import-to=ftplib `
-    --nofollow-import-to=socketserver `
-    --include-module=typing_inspection `
-    --include-data-dir=claudewarp/gui/resources=claudewarp/gui/resources `
-    main.py
+Write-Host "Starting Nuitka compilation for Windows (Both Single-File and Multi-File)..."
 
-Write-Host "Compilation finished."
+# Clean previous builds
+if (Test-Path "build") {
+    Write-Host "Cleaning previous builds..."
+    Remove-Item -Path "build" -Recurse -Force
+}
 
-# Define the path to the compiled executable
-$exePath = "build/main.exe"
+$success = $true
 
-# Check if the file exists
-if (Test-Path $exePath) {
-    # Get the file size in bytes
-    $fileSizeBytes = (Get-Item $exePath).Length
+try {
+    Write-Host ""
+    Write-Host "=== Building Single-File Version ==="
+    
+    # Build single-file version
+    Invoke-NuitkaBuild -BuildType "onefile" -ReportName "report_onefile.html"
+    
+    # Backup the single-file executable
+    if (Test-Path "build/main.exe") {
+        Copy-Item "build/main.exe" "build/main_onefile.exe"
+        Write-Host "✓ Single-file build backed up as main_onefile.exe"
+    }
+    
+    Write-Host ""
+    Write-Host "=== Building Multi-File Version ==="
+    
+    # Build multi-file version (this will overwrite main.exe but we have backup)
+    Invoke-NuitkaBuild -BuildType "multifile" -ReportName "report_multifile.html"
+    
+    # Backup the multi-file executable  
+    if (Test-Path "build/main.exe") {
+        Copy-Item "build/main.exe" "build/main_multifile.exe"
+        Write-Host "✓ Multi-file build backed up as main_multifile.exe"
+    }
+    
+} catch {
+    Write-Host "Error during build: $($_.Exception.Message)" -ForegroundColor Red
+    $success = $false
+}
 
-    # Convert to Megabytes and round to 2 decimal places
+Write-Host ""
+Write-Host "=== Final Build Summary ==="
+
+# Show results for single-file build
+if (Test-Path "build/main_onefile.exe") {
+    $fileSizeBytes = (Get-Item "build/main_onefile.exe").Length
     $fileSizeMB = [math]::Round($fileSizeBytes / 1MB, 2)
-
-    # Display the file size
-    Write-Host "Output file: $exePath"
-    Write-Host "File size: $($fileSizeMB) MB ($($fileSizeBytes) bytes)"
+    Write-Host "✓ Single-file build: build/main_onefile.exe - $($fileSizeMB) MB"
 } else {
-    Write-Host "Error: Compiled file not found at $exePath"
+    Write-Host "✗ Single-file build failed" -ForegroundColor Red
+    $success = $false
+}
+
+# Show results for multi-file build
+if (Test-Path "build/main_multifile.exe") {
+    $fileSizeBytes = (Get-Item "build/main_multifile.exe").Length
+    $fileSizeMB = [math]::Round($fileSizeBytes / 1MB, 2)
+    Write-Host "✓ Multi-file build: build/main_multifile.exe - $($fileSizeMB) MB"
+    
+    if (Test-Path "build/main.dist") {
+        $fileCount = (Get-ChildItem -Path "build/main.dist" -Recurse -File).Count
+        $totalSize = (Get-ChildItem -Path "build/main.dist" -Recurse -File | Measure-Object -Property Length -Sum).Sum
+        $totalSizeMB = [math]::Round($totalSize / 1MB, 2)
+        Write-Host "  Distribution folder: build/main.dist ($fileCount files, $($totalSizeMB) MB total)"
+    }
+} else {
+    Write-Host "✗ Multi-file build failed" -ForegroundColor Red
+    $success = $false
+}
+
+Write-Host ""
+if ($success) {
+    Write-Host "✅ Build process completed successfully!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Available scripts:"
+    Write-Host "  - .\scripts\nuitka_onefile.ps1 (single-file only)"
+    Write-Host "  - .\scripts\nuitka_multifile.ps1 (multi-file only)"
+} else {
+    Write-Host "❌ Build process completed with errors!" -ForegroundColor Red
+    exit 1
 }
 

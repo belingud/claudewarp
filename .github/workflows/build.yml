@@ -121,11 +121,28 @@ jobs:
               }
             }
             "windows" => {
-              if ("build/main.exe" | path exists) {
-                print "Moving 'build/main.exe' to 'dist/ClaudeWarp.exe'"
-                ^mv build/main.exe dist/ClaudeWarp.exe
+              # Handle single-file build
+              if ("build/main_onefile.exe" | path exists) {
+                print "Moving 'build/main_onefile.exe' to 'dist/ClaudeWarp.exe'"
+                ^mv build/main_onefile.exe dist/ClaudeWarp.exe
               } else {
-                print "⚠️ Nuitka output 'build/main.exe' not found!"
+                print "⚠️ Nuitka single-file output 'build/main_onefile.exe' not found!"
+              }
+              
+              # Handle multi-file build distribution folder
+              if ("build/main.dist" | path exists) {
+                print "Creating multi-file distribution package..."
+                ^mkdir -p dist/multifile
+                ^cp -r build/main.dist/* dist/multifile/
+                
+                # Also copy the multi-file executable if available
+                if ("build/main_multifile.exe" | path exists) {
+                  ^cp build/main_multifile.exe dist/multifile/ClaudeWarp.exe
+                } else if ("build/main.exe" | path exists) {
+                  ^cp build/main.exe dist/multifile/ClaudeWarp.exe
+                }
+              } else {
+                print "⚠️ Nuitka multi-file distribution 'build/main.dist' not found!"
               }
             }
             "linux" => {
@@ -193,13 +210,24 @@ jobs:
               }
             }
             "windows" => {
-              print "🪟 Creating Windows package..."
+              print "🪟 Creating Windows packages..."
+              
+              # Create single-file package
               if ("dist/ClaudeWarp.exe" | path exists) {
-                let zip_name = $"ClaudeWarp-($version)-windows-($arch).zip"
+                let zip_name = $"ClaudeWarp-($version)-windows-($arch)-onefile.zip"
                 cd dist
                 ^powershell -c $"Compress-Archive -Path ClaudeWarp.exe -DestinationPath ../($zip_name)"
                 cd ..
-                print "✅ Windows package created"
+                print $"✅ Single-file package created: ($zip_name)"
+              }
+              
+              # Create multi-file package
+              if ("dist/multifile" | path exists) {
+                let zip_name = $"ClaudeWarp-($version)-windows-($arch)-multifile.zip"
+                cd dist
+                ^powershell -c $"Compress-Archive -Path multifile/* -DestinationPath ../($zip_name)"
+                cd ..
+                print $"✅ Multi-file package created: ($zip_name)"
               }
             }
             "linux" => {
