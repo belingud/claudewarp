@@ -37,7 +37,7 @@ jobs:
 
       - name: Install Inno Setup
         run: |
-          Write-Host "📦 Installing Inno Setup for Windows installer creation..."
+          Write-Host "Installing Inno Setup for Windows installer creation..."
           
           # Download Inno Setup
           $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
@@ -53,10 +53,10 @@ jobs:
           # Verify installation
           $innoSetupPath = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (Test-Path $innoSetupPath) {
-            Write-Host "✅ Inno Setup installed successfully at: $innoSetupPath"
+            Write-Host "SUCCESS: Inno Setup installed successfully at: $innoSetupPath"
             & $innoSetupPath | Write-Host
           } else {
-            Write-Host "❌ Inno Setup installation failed"
+            Write-Host "ERROR: Inno Setup installation failed"
             exit 1
           }
           
@@ -66,53 +66,53 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          Write-Host "📦 Installing dependencies with uv..."
+          Write-Host "Installing dependencies with uv..."
           uv sync --all-groups --all-extras
-          Write-Host "✅ Dependencies installed"
+          Write-Host "Dependencies installed successfully"
         shell: powershell
 
       - name: Build Windows application
         run: |
-          Write-Host "🔨 Building Windows application with Nuitka..."
+          Write-Host "Building Windows application with Nuitka..."
           
           # Execute the main build script which includes installer creation
           powershell -NonInteractive -ExecutionPolicy Bypass -File ./scripts/nuitka.ps1
           
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Build failed with exit code $LASTEXITCODE"
+            Write-Host "ERROR: Build failed with exit code $LASTEXITCODE"
             exit 1
           }
           
-          Write-Host "✅ Build completed successfully"
+          Write-Host "Build completed successfully"
         shell: powershell
 
       - name: Verify build outputs
         run: |
-          Write-Host "📋 Verifying build outputs..."
+          Write-Host "Verifying build outputs..."
           
           # Check single-file build
           if (Test-Path "build/main_onefile.exe") {
             $size = [math]::Round((Get-Item "build/main_onefile.exe").Length / 1MB, 2)
-            Write-Host "✅ Single-file build: build/main_onefile.exe ($size MB)"
+            Write-Host "SUCCESS: Single-file build: build/main_onefile.exe ($size MB)"
           } else {
-            Write-Host "⚠️ Single-file build not found"
+            Write-Host "WARNING: Single-file build not found"
           }
           
           # Check multi-file build
           if (Test-Path "build/main_multifile.exe") {
             $size = [math]::Round((Get-Item "build/main_multifile.exe").Length / 1MB, 2)
-            Write-Host "✅ Multi-file build: build/main_multifile.exe ($size MB)"
+            Write-Host "SUCCESS: Multi-file build: build/main_multifile.exe ($size MB)"
           } else {
-            Write-Host "⚠️ Multi-file build not found"
+            Write-Host "WARNING: Multi-file build not found"
           }
           
           if (Test-Path "build/main.dist") {
             $fileCount = (Get-ChildItem -Path "build/main.dist" -Recurse -File).Count
             $totalSize = (Get-ChildItem -Path "build/main.dist" -Recurse -File | Measure-Object -Property Length -Sum).Sum
             $totalSizeMB = [math]::Round($totalSize / 1MB, 2)
-            Write-Host "✅ Distribution folder: build/main.dist ($fileCount files, $totalSizeMB MB)"
+            Write-Host "SUCCESS: Distribution folder: build/main.dist ($fileCount files, $totalSizeMB MB)"
           } else {
-            Write-Host "⚠️ Distribution folder not found"
+            Write-Host "WARNING: Distribution folder not found"
           }
           
           # Check installer
@@ -121,19 +121,19 @@ jobs:
             if ($installerFiles.Count -gt 0) {
               foreach ($file in $installerFiles) {
                 $size = [math]::Round($file.Length / 1MB, 2)
-                Write-Host "✅ Windows installer: $($file.FullName) ($size MB)"
+                Write-Host "SUCCESS: Windows installer: $($file.FullName) ($size MB)"
               }
             } else {
-              Write-Host "⚠️ No installer .exe files found in build/installer/"
+              Write-Host "WARNING: No installer .exe files found in build/installer/"
             }
           } else {
-            Write-Host "⚠️ Installer directory not found"
+            Write-Host "WARNING: Installer directory not found"
           }
         shell: powershell
 
       - name: Prepare release packages
         run: |
-          Write-Host "📦 Preparing release packages..."
+          Write-Host "Preparing release packages..."
           
           # Get version
           $version = if ($env:GITHUB_REF -like "refs/tags/*") {
@@ -155,14 +155,14 @@ jobs:
           if (Test-Path "build/main_onefile.exe") {
             $zipName = "ClaudeWarp-$version-windows-x64-onefile.zip"
             Compress-Archive -Path "build/main_onefile.exe" -DestinationPath "release/$zipName"
-            Write-Host "✅ Created: release/$zipName"
+            Write-Host "SUCCESS: Created: release/$zipName"
           }
           
           # Package multi-file version
           if (Test-Path "build/main.dist") {
             $zipName = "ClaudeWarp-$version-windows-x64-multifile.zip"
             Compress-Archive -Path "build/main.dist/*", "build/main_multifile.exe" -DestinationPath "release/$zipName"
-            Write-Host "✅ Created: release/$zipName"
+            Write-Host "SUCCESS: Created: release/$zipName"
           }
           
           # Copy installer
@@ -171,13 +171,13 @@ jobs:
             foreach ($file in $installerFiles) {
               $newName = "ClaudeWarp-$version-windows-x64-installer.exe"
               Copy-Item $file.FullName "release/$newName"
-              Write-Host "✅ Created: release/$newName"
+              Write-Host "SUCCESS: Created: release/$newName"
             }
           }
           
           # List all created files
           Write-Host ""
-          Write-Host "📋 Release packages:"
+          Write-Host "Release packages:"
           Get-ChildItem -Path "release" | ForEach-Object {
             $size = [math]::Round($_.Length / 1MB, 2)
             Write-Host "  - $($_.Name) ($size MB)"
@@ -202,13 +202,13 @@ jobs:
           $releaseBody = @"
           ## ClaudeWarp $version - Windows Release
           
-          ### 📦 Available Downloads
+          ### Available Downloads
           
           - **Windows Installer** (推荐): 双击安装，支持桌面快捷方式、开始菜单、PATH环境变量
           - **Single-file Executable**: 独立的单文件版本，无需安装
           - **Multi-file Distribution**: 多文件版本，包含所有依赖
           
-          ### 🚀 安装说明
+          ### Installation Guide
           
           1. **使用安装程序 (推荐)**:
              - 下载 `ClaudeWarp-*-installer.exe`
@@ -223,12 +223,12 @@ jobs:
              - 下载 `ClaudeWarp-*-multifile.zip`
              - 解压后运行 `main_multifile.exe`
           
-          ### ⚡ 新功能
+          ### New Features
           
-          - 🎉 新增 Windows 安装程序支持
-          - ✨ 支持标准的安装/卸载流程
-          - 🔧 可选添加到系统 PATH
-          - 🖥️ 自动创建桌面和开始菜单快捷方式
+          - 新增 Windows 安装程序支持
+          - 支持标准的安装/卸载流程
+          - 可选添加到系统 PATH
+          - 自动创建桌面和开始菜单快捷方式
           
           See [CHANGELOG.md](https://github.com/belingud/claudewarp/blob/main/CHANGELOG.md) for detailed changes.
           "@
@@ -259,7 +259,7 @@ jobs:
 
       - name: Test installer (dry run)
         run: |
-          Write-Host "🧪 Testing Windows installer..."
+          Write-Host "Testing Windows installer..."
           
           $installerFiles = Get-ChildItem -Path "test-installer" -Filter "*installer.exe"
           
@@ -270,17 +270,17 @@ jobs:
             # Test installer help/info (non-interactive)
             try {
               & $installer.FullName "/?" 2>&1 | Write-Host
-              Write-Host "✅ Installer responds to help command"
+              Write-Host "Installer responds to help command"
             } catch {
-              Write-Host "⚠️ Installer help test failed: $($_.Exception.Message)"
+              Write-Host "Installer help test failed: $($_.Exception.Message)"
             }
             
             # Verify installer properties
             $size = [math]::Round($installer.Length / 1MB, 2)
             Write-Host "Installer size: $size MB"
-            Write-Host "✅ Installer testing completed"
+            Write-Host "Installer testing completed"
           } else {
-            Write-Host "❌ No installer found for testing"
+            Write-Host "No installer found for testing"
             exit 1
           }
         shell: powershell
