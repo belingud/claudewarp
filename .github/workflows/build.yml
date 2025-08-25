@@ -71,7 +71,11 @@ jobs:
             }
             "windows" => {
               print "🪟 Setting up Windows..."
-              # Windows 通常不需要额外依赖
+              print "📦 Installing Inno Setup for Windows installer creation..."
+              # Download and install Inno Setup
+              ^powershell -c "Invoke-WebRequest -Uri 'https://jrsoftware.org/download.php/is.exe' -OutFile 'innosetup.exe'"
+              ^powershell -c "Start-Process -Wait -FilePath 'innosetup.exe' -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-'"
+              print "✅ Inno Setup installed"
             }
           }
 
@@ -143,6 +147,24 @@ jobs:
                 }
               } else {
                 print "⚠️ Nuitka multi-file distribution 'build/main.dist' not found!"
+              }
+              
+              # Handle Windows installer if available
+              if ("build/installer" | path exists) {
+                print "Moving Windows installer..."
+                ^mkdir -p dist/installer
+                let installer_files = (ls build/installer/*.exe | get name)
+                if ($installer_files | length) > 0 {
+                  for file in $installer_files {
+                    let basename = ($file | path basename)
+                    ^cp $file $"dist/installer/($basename)"
+                    print $"✅ Copied installer: ($basename)"
+                  }
+                } else {
+                  print "⚠️ No installer .exe files found in build/installer/"
+                }
+              } else {
+                print "⚠️ Installer directory 'build/installer' not found!"
               }
             }
             "linux" => {
@@ -229,6 +251,21 @@ jobs:
                 cd ..
                 print $"✅ Multi-file package created: ($zip_name)"
               }
+              
+              # Create installer package
+              if ("dist/installer" | path exists) {
+                let installer_files = (ls dist/installer/*.exe | get name)
+                if ($installer_files | length) > 0 {
+                  for file in $installer_files {
+                    let basename = ($file | path basename | str replace ".exe" "")
+                    let installer_name = $"($basename)-($version)-windows-($arch).exe"
+                    ^cp $file $installer_name
+                    print $"✅ Windows installer ready: ($installer_name)"
+                  }
+                } else {
+                  print "⚠️ No installer files found to package"
+                }
+              }
             }
             "linux" => {
               print "🐧 Creating Linux packages..."
@@ -272,7 +309,7 @@ jobs:
         shell: nu {0}
         run: |
           print "📦 Created packages:"
-          ^ls -la *.zip *.dmg *.AppImage 2>/dev/null | lines | each { |line| print $"  ($line)" }
+          ^ls -la *.zip *.dmg *.AppImage *.exe 2>/dev/null | lines | each { |line| print $"  ($line)" }
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -282,6 +319,7 @@ jobs:
             *.zip
             *.dmg
             *.AppImage
+            *.exe
           retention-days: 30
 
   release:
@@ -323,7 +361,7 @@ jobs:
 
           # Use bash find command to locate only top-level package files
           # This avoids uploading internal files like base_library.zip that cause "asset under the same name already exists" errors
-          let all_assets = (^find . -maxdepth 2 -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" | ^grep -v "/dist/" | ^grep -v "/build/" | lines)
+          let all_assets = (^find . -maxdepth 2 -name "*.zip" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.exe" | ^grep -v "/dist/" | ^grep -v "/build/" | lines)
 
           if ($all_assets | length) > 0 {
             print $"Found ($all_assets | length) assets to upload:"

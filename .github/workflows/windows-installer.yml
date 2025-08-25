@@ -1,0 +1,286 @@
+name: Windows Installer Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 0.1.8)'
+        required: false
+        default: 'dev'
+
+permissions:
+  contents: write
+
+env:
+  PROJECT_NAME: ClaudeWarp
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  build-windows-installer:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & UV
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install UV
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install Inno Setup
+        run: |
+          Write-Host "📦 Installing Inno Setup for Windows installer creation..."
+          
+          # Download Inno Setup
+          $innoSetupUrl = "https://jrsoftware.org/download.php/is.exe"
+          $installerPath = "innosetup.exe"
+          
+          Write-Host "Downloading Inno Setup from: $innoSetupUrl"
+          Invoke-WebRequest -Uri $innoSetupUrl -OutFile $installerPath
+          
+          # Install Inno Setup silently
+          Write-Host "Installing Inno Setup..."
+          Start-Process -Wait -FilePath $installerPath -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-'
+          
+          # Verify installation
+          $innoSetupPath = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (Test-Path $innoSetupPath) {
+            Write-Host "✅ Inno Setup installed successfully at: $innoSetupPath"
+            & $innoSetupPath | Write-Host
+          } else {
+            Write-Host "❌ Inno Setup installation failed"
+            exit 1
+          }
+          
+          # Clean up
+          Remove-Item $installerPath -Force
+        shell: powershell
+
+      - name: Install Python dependencies
+        run: |
+          Write-Host "📦 Installing dependencies with uv..."
+          uv sync --all-groups --all-extras
+          Write-Host "✅ Dependencies installed"
+        shell: powershell
+
+      - name: Build Windows application
+        run: |
+          Write-Host "🔨 Building Windows application with Nuitka..."
+          
+          # Execute the main build script which includes installer creation
+          powershell -NonInteractive -ExecutionPolicy Bypass -File ./scripts/nuitka.ps1
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Build failed with exit code $LASTEXITCODE"
+            exit 1
+          }
+          
+          Write-Host "✅ Build completed successfully"
+        shell: powershell
+
+      - name: Verify build outputs
+        run: |
+          Write-Host "📋 Verifying build outputs..."
+          
+          # Check single-file build
+          if (Test-Path "build/main_onefile.exe") {
+            $size = [math]::Round((Get-Item "build/main_onefile.exe").Length / 1MB, 2)
+            Write-Host "✅ Single-file build: build/main_onefile.exe ($size MB)"
+          } else {
+            Write-Host "⚠️ Single-file build not found"
+          }
+          
+          # Check multi-file build
+          if (Test-Path "build/main_multifile.exe") {
+            $size = [math]::Round((Get-Item "build/main_multifile.exe").Length / 1MB, 2)
+            Write-Host "✅ Multi-file build: build/main_multifile.exe ($size MB)"
+          } else {
+            Write-Host "⚠️ Multi-file build not found"
+          }
+          
+          if (Test-Path "build/main.dist") {
+            $fileCount = (Get-ChildItem -Path "build/main.dist" -Recurse -File).Count
+            $totalSize = (Get-ChildItem -Path "build/main.dist" -Recurse -File | Measure-Object -Property Length -Sum).Sum
+            $totalSizeMB = [math]::Round($totalSize / 1MB, 2)
+            Write-Host "✅ Distribution folder: build/main.dist ($fileCount files, $totalSizeMB MB)"
+          } else {
+            Write-Host "⚠️ Distribution folder not found"
+          }
+          
+          # Check installer
+          if (Test-Path "build/installer") {
+            $installerFiles = Get-ChildItem -Path "build/installer" -Filter "*.exe"
+            if ($installerFiles.Count -gt 0) {
+              foreach ($file in $installerFiles) {
+                $size = [math]::Round($file.Length / 1MB, 2)
+                Write-Host "✅ Windows installer: $($file.FullName) ($size MB)"
+              }
+            } else {
+              Write-Host "⚠️ No installer .exe files found in build/installer/"
+            }
+          } else {
+            Write-Host "⚠️ Installer directory not found"
+          }
+        shell: powershell
+
+      - name: Prepare release packages
+        run: |
+          Write-Host "📦 Preparing release packages..."
+          
+          # Get version
+          $version = if ($env:GITHUB_REF -like "refs/tags/*") {
+            $env:GITHUB_REF -replace "refs/tags/", "" -replace "v", ""
+          } elseif ("${{ github.event.inputs.version }}" -ne "") {
+            "${{ github.event.inputs.version }}"
+          } else {
+            "dev"
+          }
+          
+          Write-Host "Version: $version"
+          
+          # Create release directory
+          if (!(Test-Path "release")) {
+            New-Item -ItemType Directory -Path "release" -Force | Out-Null
+          }
+          
+          # Package single-file version
+          if (Test-Path "build/main_onefile.exe") {
+            $zipName = "ClaudeWarp-$version-windows-x64-onefile.zip"
+            Compress-Archive -Path "build/main_onefile.exe" -DestinationPath "release/$zipName"
+            Write-Host "✅ Created: release/$zipName"
+          }
+          
+          # Package multi-file version
+          if (Test-Path "build/main.dist") {
+            $zipName = "ClaudeWarp-$version-windows-x64-multifile.zip"
+            Compress-Archive -Path "build/main.dist/*", "build/main_multifile.exe" -DestinationPath "release/$zipName"
+            Write-Host "✅ Created: release/$zipName"
+          }
+          
+          # Copy installer
+          if (Test-Path "build/installer") {
+            $installerFiles = Get-ChildItem -Path "build/installer" -Filter "*.exe"
+            foreach ($file in $installerFiles) {
+              $newName = "ClaudeWarp-$version-windows-x64-installer.exe"
+              Copy-Item $file.FullName "release/$newName"
+              Write-Host "✅ Created: release/$newName"
+            }
+          }
+          
+          # List all created files
+          Write-Host ""
+          Write-Host "📋 Release packages:"
+          Get-ChildItem -Path "release" | ForEach-Object {
+            $size = [math]::Round($_.Length / 1MB, 2)
+            Write-Host "  - $($_.Name) ($size MB)"
+          }
+        shell: powershell
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-windows-installer
+          path: release/*
+          retention-days: 30
+
+      - name: Create Release (if tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          $version = $env:GITHUB_REF -replace "refs/tags/", ""
+          
+          Write-Host "Creating release for version $version"
+          
+          # Create release body
+          $releaseBody = @"
+          ## ClaudeWarp $version - Windows Release
+          
+          ### 📦 Available Downloads
+          
+          - **Windows Installer** (推荐): 双击安装，支持桌面快捷方式、开始菜单、PATH环境变量
+          - **Single-file Executable**: 独立的单文件版本，无需安装
+          - **Multi-file Distribution**: 多文件版本，包含所有依赖
+          
+          ### 🚀 安装说明
+          
+          1. **使用安装程序 (推荐)**:
+             - 下载 `ClaudeWarp-*-installer.exe`
+             - 双击运行，按向导安装
+             - 支持创建桌面快捷方式和添加到PATH
+          
+          2. **使用单文件版本**:
+             - 下载 `ClaudeWarp-*-onefile.zip`
+             - 解压后直接运行 `main_onefile.exe`
+          
+          3. **使用多文件版本**:
+             - 下载 `ClaudeWarp-*-multifile.zip`
+             - 解压后运行 `main_multifile.exe`
+          
+          ### ⚡ 新功能
+          
+          - 🎉 新增 Windows 安装程序支持
+          - ✨ 支持标准的安装/卸载流程
+          - 🔧 可选添加到系统 PATH
+          - 🖥️ 自动创建桌面和开始菜单快捷方式
+          
+          See [CHANGELOG.md](https://github.com/belingud/claudewarp/blob/main/CHANGELOG.md) for detailed changes.
+          "@
+          
+          # Create release
+          gh release create $version --title "ClaudeWarp $version" --notes $releaseBody
+          
+          # Upload files
+          Get-ChildItem -Path "release" | ForEach-Object {
+            Write-Host "Uploading: $($_.Name)"
+            gh release upload $version $_.FullName
+          }
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-installer:
+    needs: [build-windows-installer]
+    runs-on: windows-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.PROJECT_NAME }}-windows-installer
+          path: test-installer/
+
+      - name: Test installer (dry run)
+        run: |
+          Write-Host "🧪 Testing Windows installer..."
+          
+          $installerFiles = Get-ChildItem -Path "test-installer" -Filter "*installer.exe"
+          
+          if ($installerFiles.Count -gt 0) {
+            $installer = $installerFiles[0]
+            Write-Host "Found installer: $($installer.Name)"
+            
+            # Test installer help/info (non-interactive)
+            try {
+              & $installer.FullName "/?" 2>&1 | Write-Host
+              Write-Host "✅ Installer responds to help command"
+            } catch {
+              Write-Host "⚠️ Installer help test failed: $($_.Exception.Message)"
+            }
+            
+            # Verify installer properties
+            $size = [math]::Round($installer.Length / 1MB, 2)
+            Write-Host "Installer size: $size MB"
+            Write-Host "✅ Installer testing completed"
+          } else {
+            Write-Host "❌ No installer found for testing"
+            exit 1
+          }
+        shell: powershell

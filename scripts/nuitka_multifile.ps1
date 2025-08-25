@@ -97,6 +97,57 @@ if (Test-Path $distPath) {
     Write-Host "Distribution folder: $distPath"
     Write-Host "Total files: $fileCount"
     Write-Host "Total size: $($totalSizeMB) MB ($($totalSize) bytes)"
+    
+    # Generate Windows installer
+    Write-Host ""
+    Write-Host "=== Creating Windows Installer ==="
+    
+    # Check if Inno Setup is installed
+    $innoSetupPath = @(
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles(x86)}\Inno Setup 5\ISCC.exe",
+        "${env:ProgramFiles}\Inno Setup 5\ISCC.exe"
+    ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+    
+    if ($innoSetupPath) {
+        Write-Host "Found Inno Setup at: $innoSetupPath"
+        
+        # Create installer output directory
+        $installerDir = "build\installer"
+        if (!(Test-Path $installerDir)) {
+            New-Item -ItemType Directory -Path $installerDir -Force | Out-Null
+        }
+        
+        # Run Inno Setup compiler
+        try {
+            $installerScript = "scripts\installer.iss"
+            Write-Host "Compiling installer script: $installerScript"
+            
+            & "$innoSetupPath" "$installerScript"
+            
+            if ($LASTEXITCODE -eq 0) {
+                $installerFiles = Get-ChildItem -Path $installerDir -Filter "*.exe" | Sort-Object LastWriteTime -Descending
+                if ($installerFiles.Count -gt 0) {
+                    $installerFile = $installerFiles[0]
+                    $installerSizeMB = [math]::Round($installerFile.Length / 1MB, 2)
+                    Write-Host "Success: Windows installer created" -ForegroundColor Green
+                    Write-Host "Installer: $($installerFile.FullName)"
+                    Write-Host "Installer size: $($installerSizeMB) MB"
+                } else {
+                    Write-Host "Warning: Installer compilation completed but no .exe found" -ForegroundColor Yellow
+                }
+            } else {
+                Write-Host "Error: Installer compilation failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            }
+        } catch {
+            Write-Host "Error compiling installer: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Warning: Inno Setup not found. Install Inno Setup to create Windows installer." -ForegroundColor Yellow
+        Write-Host "Download from: https://jrsoftware.org/isinfo.php"
+        Write-Host "After installing Inno Setup, run: & '$innoSetupPath' 'scripts\installer.iss'"
+    }
 } else {
     Write-Host "Warning: Distribution folder not found at $distPath" -ForegroundColor Yellow
 }

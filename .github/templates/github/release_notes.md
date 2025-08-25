@@ -4,7 +4,9 @@
 
 - **macOS Intel**: `ClaudeWarp-{VERSION}-macos-x64.zip` 或 `.dmg`
 - **macOS Apple Silicon**: `ClaudeWarp-{VERSION}-macos-arm64.zip` 或 `.dmg`  
-- **Windows**: `ClaudeWarp-{VERSION}-windows-x64.zip`
+- **Windows 安装程序**: `ClaudeWarp-{VERSION}-windows-x64-installer.exe` 🆕
+- **Windows 单文件**: `ClaudeWarp-{VERSION}-windows-x64-onefile.zip`
+- **Windows 多文件**: `ClaudeWarp-{VERSION}-windows-x64-multifile.zip`
 - **Linux**: `ClaudeWarp-{VERSION}-linux-x64.zip` 或 `.AppImage`
 
 ### 安装说明
@@ -16,9 +18,17 @@
 4. 首次运行可能需要在系统偏好设置中允许运行
 
 #### Windows
-1. 下载 `.zip` 压缩包
-2. 解压得到 `claudewarp.exe`
-3. 运行 `claudewarp.exe`
+1. **使用安装程序 (推荐)**:
+   - 下载 `ClaudeWarp-*-installer.exe`
+   - 双击运行，按向导安装
+   - 支持创建桌面快捷方式、开始菜单项目和添加到 PATH 环境变量
+   - 支持标准的卸载流程
+2. **使用单文件版本**:
+   - 下载 `ClaudeWarp-*-onefile.zip`
+   - 解压后直接运行 `ClaudeWarp.exe`
+3. **使用多文件版本**:
+   - 下载 `ClaudeWarp-*-multifile.zip`
+   - 解压后运行 `ClaudeWarp.exe`
 
 #### Linux
 1. **AppImage (推荐)**：下载 `.AppImage` 文件，添加执行权限后直接运行

@@ -89,10 +89,30 @@ if (Test-Path "build/main_multifile.exe") {
 Write-Host ""
 if ($success) {
     Write-Host "Build process completed successfully!" -ForegroundColor Green
+    
+    # Try to build Windows installer if multi-file build succeeded
+    if (Test-Path "build/main_multifile.exe" -and Test-Path "build/main.dist") {
+        Write-Host ""
+        Write-Host "=== Creating Windows Installer ==="
+        
+        try {
+            & "$PSScriptRoot\build_installer.ps1"
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Windows installer created successfully!" -ForegroundColor Green
+            } else {
+                Write-Host "Installer creation failed, but builds are still available" -ForegroundColor Yellow
+            }
+        } catch {
+            Write-Host "Could not create installer: $($_.Exception.Message)" -ForegroundColor Yellow
+            Write-Host "You can manually run: .\scripts\build_installer.ps1" -ForegroundColor Yellow
+        }
+    }
+    
     Write-Host ""
     Write-Host "Available scripts:"
     Write-Host "  - .\scripts\nuitka_onefile.ps1 (single-file only)"
     Write-Host "  - .\scripts\nuitka_multifile.ps1 (multi-file only)"
+    Write-Host "  - .\scripts\build_installer.ps1 (installer only)"
 } else {
     Write-Host "Build process completed with errors!" -ForegroundColor Red
     exit 1
