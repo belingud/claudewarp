@@ -131,7 +131,7 @@ claudewarp.exe    # Windows
 cw --help
 
 # 添加代理服务器
-cw add --name proxy-cn --url https://api.claude-proxy.com/ --key sk-your-api-key
+cw add --name proxy-cn --url https://api.claude-proxy.aaa/ --key sk-your-api-key
 # 或使用交互式
 cw add
 
@@ -171,7 +171,7 @@ current_proxy = "proxy-cn"
 
 [proxies.proxy-cn]
 name = "proxy-cn"
-base_url = "https://api.claude-proxy.com/"
+base_url = "https://api.claude-proxy.aaa/"
 api_key = "sk-1234567890abcdef"
 description = "国内主力节点"
 tags = ["china", "primary"]
@@ -181,7 +181,7 @@ updated_at = "2024-01-15T10:30:00"
 
 [proxies.proxy-hk]
 name = "proxy-hk"
-base_url = "https://hk.claude-proxy.com/"
+base_url = "https://hk.claude-proxy.aaa/"
 api_key = "sk-abcdef1234567890"
 description = "香港备用节点"
 tags = ["hongkong", "backup"]
@@ -204,19 +204,19 @@ log_level = "INFO"
 cw export --shell bash
 # 输出：
 # export ANTHROPIC_API_KEY="sk-your-api-key"
-# export ANTHROPIC_BASE_URL="https://api.claude-proxy.com/"
+# export ANTHROPIC_BASE_URL="https://api.claude-proxy.aaa/"
 
 # PowerShell
 cw export --shell powershell
 # 输出：
 # $env:ANTHROPIC_API_KEY="sk-your-api-key"
-# $env:ANTHROPIC_BASE_URL="https://api.claude-proxy.com/"
+# $env:ANTHROPIC_BASE_URL="https://api.claude-proxy.aaa/"
 
 # Fish Shell
 cw export --shell fish
 # 输出：
 # set -x ANTHROPIC_API_KEY "sk-your-api-key"
-# set -x ANTHROPIC_BASE_URL "https://api.claude-proxy.com/"
+# set -x ANTHROPIC_BASE_URL "https://api.claude-proxy.aaa/"
 ```
 
 ## 🏗️ 开发指南
